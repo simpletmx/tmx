@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "0.1a0"
+__version__ = "0.1a1"
 
 
 import xml.etree.ElementTree as ET
@@ -165,7 +165,13 @@ class TileMap(object):
             trans = image_root.attrib.get("trans")
             width = image_root.attrib.get("width")
             height = image_root.attrib.get("height")
-            return Image(format_, source, trans, width, height)
+            data = None
+
+            for child in image_root:
+                if child.tag == "data":
+                    data = child.text.strip()
+
+            return Image(format_, source, trans, width, height, data)
 
         for child in root:
             if child.tag == "properties":
@@ -330,16 +336,85 @@ class TileMap(object):
 
 class Image(object):
 
+    """
+    .. attribute:: format
+
+       Indicates the format of image data if embedded.  Should be an
+       extension like ``"png"``, ``"gif"``, ``"jpg"``, or ``"bmp"``.
+       Set to :const:`None` to not specify the format.
+
+    .. attribute:: source
+
+       The location of the image file relative to the directory of the
+       relevant TMX file.  If set to :const:`None`, the image data is
+       embedded.
+
+    .. attribute:: trans
+
+       The transparent color of the image as a hex string (e.g.
+       ``"FF0000"`` or ``"#00FF00"``), or :const:`None` if no color is
+       treated as transparent.
+
+    .. attribute:: width
+
+       The width of the image in pixels; used for tile index correction
+       when the image changes.  If set to :const:`None`, the image width
+       is not explicitly specified.
+
+    .. attribute:: height
+
+       The height of the image in pixels; used for tile index correction
+       when the image changes.  If set to :const:`None`, the image
+       height is not explicitly specified.
+
+    .. attribute:: data
+
+       The image data if embedded, or :const:`None` if an external image
+       is referenced.
+    """
+
     def __init__(self, format_=None, source=None, trans=None, width=None,
-                 height=None):
+                 height=None, data=None):
         self.format = format_
         self.source = source
         self.trans = trans
         self.width = width
         self.height = height
+        self.data = data
 
 
 class ImageLayer(object):
+
+    """
+    .. attribute:: name
+
+       The name of the image layer.
+
+    .. attribute:: x
+
+       The x position of the image layer in pixels.
+
+    .. attribute:: y
+
+       The y position of the image layer in pixels.
+
+    .. attribute:: opacity
+
+       The opacity of the image layer as a value from 0 to 1.
+
+    .. attribute:: visible
+
+       Whether or not the image layer is visible.
+
+    .. attribute:: properties
+
+       A list of :class:`Property` objects indicating the properties of
+       the image layer.
+
+    .. attribute:: image
+
+       An :class:`Image` object indicating the image of the image layer.
+    """
 
     def __init__(self, name, x, y, opacity=1, visible=True, properties=None,
                  image=None):
@@ -353,6 +428,30 @@ class ImageLayer(object):
 
 
 class Layer(object):
+
+    """
+    .. attribute:: name
+
+       The name of the layer.
+
+    .. attribute:: opacity
+
+       The opacity of the layer as a value from 0 to 1.
+
+    .. attribute:: visible
+
+       Whether or not the layer is visible.
+
+    .. attribute:: properties
+
+       A list of :class:`Property` objects indicating the properties of
+       the layer.
+
+    .. attribute:: tiles
+
+       A list of global tile IDs indicating the tiles of the layer.  A
+       value of ``0`` indicates no tile at the respective position.
+    """
 
     def __init__(self, name, opacity=1, visible=True, properties=None,
                  tiles=None):
@@ -668,7 +767,7 @@ def data_decode(data, encoding, compression=None):
     if encoding == "csv":
         return [int(i) for i in data.strip().split(",")]
     elif encoding == "base64":
-        data = base64.b64decode(data.strip())
+        data = base64.b64decode(data.strip().encode("ascii"))
 
         if compression == "gzip":
             # data = gzip.decompress(data)
@@ -680,7 +779,10 @@ def data_decode(data, encoding, compression=None):
             e = 'Compression type "{}" not supported.'.format(compression)
             raise ValueError(e)
 
-        return [ord(c) for c in data]
+        if six.PY2:
+            return [ord(c) for c in data]
+        else:
+            return [i for i in data]
     else:
         e = 'Encoding type "{}" not supported.'.format(encoding)
         raise ValueError(e)
@@ -702,7 +804,7 @@ def data_encode(data, encoding, compression=None):
     if encoding == "csv":
         return ','.join(data)
     elif encoding == "base64":
-        data = ''.join([chr(i) for i in data])
+        data = b''.join([six.int2byte(i) for i in data])
 
         if compression == "gzip":
             # data = gzip.compress(data)
