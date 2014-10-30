@@ -36,9 +36,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "0.1a2"
+__version__ = "0.1a3"
 
 
+import os
 import xml.etree.ElementTree as ET
 import base64
 import gzip
@@ -142,6 +143,7 @@ class TileMap(object):
 
         tree = ET.parse(fname)
         root = tree.getroot()
+        fd = os.path.dirname(fname)
         self.version = root.attrib.get("version", self.version)
         self.orientation = root.attrib.get("orientation", self.orientation)
         self.width = int(root.attrib.get("width", self.width))
@@ -159,9 +161,11 @@ class TileMap(object):
                 properties.append(Property(name, value))
             return properties
 
-        def get_image(image_root):
+        def get_image(image_root, fd=fd):
             format_ = image_root.attrib.get("format")
             source = image_root.attrib.get("source")
+            if source is not None:
+                source = os.path.join(fd, source)
             trans = image_root.attrib.get("trans")
             width = image_root.attrib.get("width")
             height = image_root.attrib.get("height")
@@ -181,13 +185,12 @@ class TileMap(object):
                 source = child.attrib.get("source")
 
                 if source is not None:
-                    tfname = os.path.join(os.path.dirname(fname), source)
-                    ttree = ET.parse(tfname)
-                    troot = ttree.getroot()
+                    source = os.path.join(fd, source)
+                    troot = ET.parse(source).getroot()
                 else:
                     troot = child
 
-                name = troot.attrib.get("name", ""),
+                name = troot.attrib.get("name", "")
                 tilewidth = int(troot.attrib.get("tilewidth", 32))
                 tileheight = int(troot.attrib.get("tileheight", 32))
                 spacing = int(troot.attrib.get("spacing", 0))
@@ -257,7 +260,7 @@ class TileMap(object):
                             tiles = data_decode(lchild.text, encoding,
                                                 compression)
                         else:
-                            tiles = [tile.attrib.get("gid", 0)
+                            tiles = [int(tile.attrib.get("gid", 0))
                                      for tile in lchild.findall("tile")]
 
                 self.layers.append(Layer(name, opacity, visible, properties,
@@ -333,6 +336,196 @@ class TileMap(object):
 
         return self
 
+    def save(self, fname, data_encoding=None, data_compression=None):
+        """Save the object to the indicated file."""
+        def clean_attr(d):
+            new_d = {}
+            for i in d:
+                if d[i] is not None:
+                    new_d[i] = str(d[i])
+            return new_d
+
+        attr = {"version": self.version, "orientation": self.orientation,
+                "width": self.width, "height": self.height,
+                "tilewidth": self.tilewidth, "tileheight": self.tileheight,
+                "backgroundcolor": self.backgroundcolor,
+                "renderorder": self.renderorder}
+        root = ET.Element("map", attrib=clean_attr(attr))
+        fd = os.path.dirname(fname)
+
+        def get_properties_elem(properties):
+            elem = ET.Element("properties")
+            for prop in properties:
+                prop_attr = {"name": prop.name, "value": prop.value}
+                elem.append(ET.Element("property",
+                                       attrib=clean_attr(prop_attr)))
+
+            return elem
+
+        def get_image_elem(image_obj, fd=fd):
+            attr = {"format": image_obj.format, "trans": image_obj.trans,
+                    "width": image_obj.width, "height": image_obj.height}
+            if image_obj.source:
+                attr["source"] = os.path.relpath(image_obj.source, fd)
+            elem = ET.Element("image", attrib=clean_attr(attr))
+
+            if image_obj.data is not None:
+                data_elem = ET.Element("data")
+                data_elem.text = image_obj.data
+                elem.append(data_elem)
+
+            return elem
+
+        if self.properties:
+            root.append(get_properties_elem(self.properties))
+
+        for tileset in self.tilesets:
+            attr = {"firstgid": tileset.firstgid, "name": tileset.name,
+                    "tilewidth": tileset.tilewidth,
+                    "tileheight": tileset.tileheight}
+            if tileset.source:
+                attr["source"] = os.path.relpath(tileset.source, fd)
+            if tileset.spacing:
+                attr["spacing"] = tileset.spacing
+            if tileset.margin:
+                attr["margin"] = tileset.margin
+            elem = ET.Element("tileset", attrib=clean_attr(attr))
+
+            if tileset.xoffset or tileset.yoffset:
+                attr = {"x": tileset.xoffset, "y": tileset.yoffset}
+                offset_elem = ET.Element("tileoffset", attrib=clean_attr(attr))
+                elem.append(offset_elem)
+
+            if tileset.properties:
+                elem.append(get_properties_elem(tileset.properties))
+
+            if tileset.image:
+                elem.append(get_image_elem(tileset.image))
+
+            if tileset.terraintypes:
+                ttypes_elem = ET.Element("terraintypes")
+
+                for terrain in tileset.terraintypes:
+                    attr = {"name": terrain.name, "tile": terrain.tile}
+                    terrain_elem = ET.Element("terrain",
+                                              attrib=clean_attr(attr))
+
+                    if terrain.properties:
+                        prop_elem = get_properties_elem(terrain.properties)
+                        terrain_elem.append(prop_elem)
+
+                    ttypes_elem.append(terrain_elem)
+
+                elem.append(ttypes_elem)
+
+            for tile in tileset.tiles:
+                attr = {"id": tile.id, "terrain": tile.terrain,
+                        "probability": tile.probability}
+                tile_elem = ET.Element("tile", attrib=clean_attr(attr))
+
+                if tile.properties:
+                    tile_elem.append(get_properties_elem(tile.properties))
+
+                if tile.image:
+                    tile_elem.append(get_image_elem(tile.image))
+
+                elem.append(tile_elem)
+
+            root.append(elem)
+
+        for layer in self.layers:
+            attr = {"name": layer.name}
+            if layer.opacity != 1:
+                attr["opacity"] = layer.opacity
+            if not layer.visible:
+                attr["visible"] = "0"
+            elem = ET.Element("layer", attrib=clean_attr(attr))
+
+            if layer.properties:
+                elem.append(get_properties_elem(layer.properties))
+
+            if data_encoding is None:
+                data_elem = ET.Element("data")
+
+                for tile in layer.tiles:
+                    attr = {"gid": tile}
+                    tile_elem = ET.Element("tile", attrib=clean_attr(attr))
+                    data_elem.append(tile_elem)
+
+                elem.append(data_elem)
+            else:
+                attr = {"encoding": data_encoding,
+                        "compression": data_compression}
+                data_elem = ET.Element("data", attrib=clean_attr(attr))
+                data_elem.text = data_encode(layer.tiles, data_encoding,
+                                             data_compression)
+                elem.append(data_elem)
+
+            root.append(elem)
+
+        for objectgroup in self.objectgroups:
+            attr = {"name": objectgroup.name, "color": objectgroup.color}
+            if objectgroup.opacity != 1:
+                attr["opacity"] = objectgroup.opacity
+            if not objectgroup.visible:
+                attr["visible"] = "0"
+            elem = ET.Element("objectgroup", attrib=clean_attr(attr))
+
+            if objectgroup.properties:
+                elem.append(get_properties_elem(objectgroup.properties))
+
+            for obj in objectgroup.objects:
+                attr = {"name": obj.name, "type": obj.type,
+                        "x": obj.x, "y": obj.y, "gid": obj.gid}
+                if obj.width:
+                    attr["width"] = obj.width
+                if obj.height:
+                    attr["height"] = obj.height
+                if obj.rotation:
+                    attr["rotation"] = obj.rotation
+                if not obj.visible:
+                    attr["visible"] = "0"
+                object_elem = ET.Element("object", attrib=clean_attr(attr))
+
+                if obj.ellipse:
+                    object_elem.append(ET.Element("ellipse"))
+                elif obj.polygon is not None:
+                    points = ' '.join(['{},{}'.format(*T)
+                                       for T in obj.polygon])
+                    poly_elem = ET.Element("polygon",
+                                           attrib={"points": points})
+                    object_elem.append(poly_elem)
+                elif obj.polyline is not None:
+                    points = ' '.join(['{},{}'.format(*T)
+                                       for T in obj.polyline])
+                    poly_elem = ET.Element("polyline",
+                                           attrib={"points": points})
+                    object_elem.append(poly_elem)
+
+                elem.append(object_elem)
+
+            root.append(elem)
+
+        for imagelayer in self.imagelayers:
+            attr = {"name": imagelayer.name, "x": imagelayer.x,
+                    "y": imagelayer.y}
+            if imagelayer.opacity != 1:
+                attr["opacity"] = imagelayer.opacity
+            if not imagelayer.visible:
+                attr["visible"] = "0"
+            elem = ET.Element("imagelayer", attrib=clean_attr(attr))
+
+            if imagelayer.properties:
+                elem.append(get_properties_elem(imagelayer.properties))
+
+            if imagelayer.image:
+                elem.append(get_image_elem(imagelayer.image))
+
+            root.append(elem)
+
+        tree = ET.ElementTree(root)
+        tree.write(fname, encoding="UTF-8", xml_declaration=True)
+
 
 class Image(object):
 
@@ -345,9 +538,8 @@ class Image(object):
 
     .. attribute:: source
 
-       The location of the image file relative to the directory of the
-       relevant TMX file.  If set to :const:`None`, the image data is
-       embedded.
+       The location of the image file referenced.  If set to
+       :const:`None`, the image data is embedded.
 
     .. attribute:: trans
 
@@ -569,6 +761,11 @@ class ObjectGroup(object):
 
        A list of :class:`Property` objects indicating the object group's
        properties
+
+    .. attribute:: objects:
+
+       A list of :class:`Object` objects indicating the object group's
+       objects.
     """
 
     def __init__(self, name, color=None, opacity=1, visible=True,
@@ -690,9 +887,8 @@ class Tileset(object):
 
     .. attribute:: source
 
-       The external TSX (Tile Set XML) file to store this tileset in
-       relative to the directory of the relevant TMX file.  If set to
-       :const:`None`, this tileset is stored in the TMX file.
+       The external TSX (Tile Set XML) file to store this tileset in.
+       If set to :const:`None`, this tileset is stored in the TMX file.
 
     .. attribute:: spacing
 
@@ -802,17 +998,15 @@ def data_encode(data, encoding, compression=None):
       no compression.
     """
     if encoding == "csv":
-        return ','.join(data)
+        return ','.join([str(i).encode('utf-8') for i in data])
     elif encoding == "base64":
-        data = b''.join([six.int2byte(i) for i in data])
+        if six.PY2:
+            data = b''.join([chr(i) for i in data])
+        else:
+            data = b''.join([bytes((i,)) for i in data])
 
-        if compression == "gzip":
-            # data = gzip.compress(data)
-            fileobj = six.BytesIO()
-            with gzip.GzipFile(mode='w', fileobj=fileobj) as f:
-                f.write(data)
-            with open(mode='rb', fileobj=fileobj) as f:
-                data = f.read()
+        if compression == "gzip" and six.PY3:
+            data = gzip.compress(data)
         elif compression == "zlib":
             data = zlib.compress(data)
         elif compression:
