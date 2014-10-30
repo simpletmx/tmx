@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "0.1a3"
+__version__ = "0.1a4"
 
 
 import os
@@ -963,7 +963,7 @@ def data_decode(data, encoding, compression=None):
     if encoding == "csv":
         return [int(i) for i in data.strip().split(",")]
     elif encoding == "base64":
-        data = base64.b64decode(data.strip().encode("ascii"))
+        data = base64.b64decode(data.strip().encode("utf-8"))
 
         if compression == "gzip":
             # data = gzip.decompress(data)
@@ -998,7 +998,7 @@ def data_encode(data, encoding, compression=None):
       no compression.
     """
     if encoding == "csv":
-        return ','.join([str(i).encode('utf-8') for i in data])
+        return ','.join([str(i) for i in data])
     elif encoding == "base64":
         if six.PY2:
             data = b''.join([chr(i) for i in data])
@@ -1013,7 +1013,7 @@ def data_encode(data, encoding, compression=None):
             e = 'Compression type "{}" not supported.'.format(compression)
             raise ValueError(e)
 
-        return base64.b64encode(data)
+        return base64.b64encode(data).decode('utf-8')
     else:
         e = 'Encoding type "{}" not supported.'.format(encoding)
         raise ValueError(e)
