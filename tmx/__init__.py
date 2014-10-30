@@ -14,9 +14,9 @@
 # limitations under the License.
 
 """
-This library reads and writes the Tiles TMX format in a simple way.
+This library reads and writes the Tiled TMX format in a simple way.
 This is useful for map editors or generic level editors, and it's also
-useful for using a map editor or generic level editor like Tiles to edit
+useful for using a map editor or generic level editor like Tiled to edit
 your game's levels.
 
 To load a TMX file, use :meth:`tmx.TileMap.load`.  You can then read the
@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "0.1a1"
+__version__ = "0.1a2"
 
 
 import xml.etree.ElementTree as ET
