@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "0.1a4"
+__version__ = "0.1a5"
 
 
 import os
@@ -136,8 +136,8 @@ class TileMap(object):
     @classmethod
     def load(cls, fname):
         """
-        Load the indicated TMX file and return a :class:`TileMap` object
-        representing it.
+        Load the TMX file with the indicated name and return a
+        :class:`TileMap` object representing it.
         """
         self = cls()
 
@@ -337,7 +337,7 @@ class TileMap(object):
         return self
 
     def save(self, fname, data_encoding=None, data_compression=None):
-        """Save the object to the indicated file."""
+        """Save the object to the file with the indicated name."""
         def clean_attr(d):
             new_d = {}
             for i in d:
@@ -951,6 +951,9 @@ def data_decode(data, encoding, compression=None):
     """
     Decode encoded data and return a list of integers it represents.
 
+    This is a low-level function used internally by this library; you
+    don't typically need to use it.
+
     Arguments:
 
     - ``data`` -- The data to decode.
@@ -987,6 +990,9 @@ def data_decode(data, encoding, compression=None):
 def data_encode(data, encoding, compression=None):
     """
     Encode a list of integers and return the encoded data.
+
+    This is a low-level function used internally by this library; you
+    don't typically need to use it.
 
     Arguments:
 

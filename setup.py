@@ -24,12 +24,12 @@ your game's levels.
 """.strip()
 
 setup(name="tmx",
-      version="0.1a4",
+      version="0.1a5",
       description="Simple TMX library.",
       long_description=long_description,
       author="Julian Marchant",
       author_email="onpon4@riseup.net",
-      url="https://www.gitorious.org/ulvl",
+      url="https://www.gitorious.org/python-tmx",
       classifiers=["Development Status :: 4 - Beta",
                    "License :: DFSG approved",
                    "License :: OSI Approved :: Apache Software License",

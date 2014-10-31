@@ -23,6 +23,8 @@ Run setup.py with the "install" command, e.g.:
 
     python setup.py install
 
+This library has been tested on Python 2.7 and Python 3.2.
+
 
 USAGE
 
