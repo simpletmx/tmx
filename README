@@ -31,5 +31,4 @@ USAGE
 Import the tmx library in your project file.  You can then save and
 load TMX files with the tmx.TileMap class.
 
-See the docstrings for detailed information.  Access them with the help
-function, e.g. ``help(tmx)``.
+See the documentation found in the doc folder for detailed information.
