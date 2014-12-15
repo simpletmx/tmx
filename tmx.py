@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.1"
+__version__ = "1.1.1"
 
 
 import os
@@ -424,94 +424,93 @@ class TileMap(object):
             root.append(elem)
 
         for layer in self.layers:
-            attr = {"name": layer.name}
-            if layer.opacity != 1:
-                attr["opacity"] = layer.opacity
-            if not layer.visible:
-                attr["visible"] = "0"
-            elem = ET.Element("layer", attrib=clean_attr(attr))
-
-            if layer.properties:
-                elem.append(get_properties_elem(layer.properties))
-
-            if data_encoding is None:
-                data_elem = ET.Element("data")
-
-                for tile in layer.tiles:
-                    attr = {"gid": tile}
-                    tile_elem = ET.Element("tile", attrib=clean_attr(attr))
-                    data_elem.append(tile_elem)
-
-                elem.append(data_elem)
-            else:
-                attr = {"encoding": data_encoding,
-                        "compression": data_compression}
-                data_elem = ET.Element("data", attrib=clean_attr(attr))
-                data_elem.text = data_encode(layer.tiles, data_encoding,
-                                             data_compression)
-                elem.append(data_elem)
-
-            root.append(elem)
-
-        for objectgroup in self.objectgroups:
-            attr = {"name": objectgroup.name, "color": objectgroup.color}
-            if objectgroup.opacity != 1:
-                attr["opacity"] = objectgroup.opacity
-            if not objectgroup.visible:
-                attr["visible"] = "0"
-            elem = ET.Element("objectgroup", attrib=clean_attr(attr))
-
-            if objectgroup.properties:
-                elem.append(get_properties_elem(objectgroup.properties))
-
-            for obj in objectgroup.objects:
-                attr = {"name": obj.name, "type": obj.type,
-                        "x": obj.x, "y": obj.y, "gid": obj.gid}
-                if obj.width:
-                    attr["width"] = obj.width
-                if obj.height:
-                    attr["height"] = obj.height
-                if obj.rotation:
-                    attr["rotation"] = obj.rotation
-                if not obj.visible:
+            if isinstance(layer, Layer):
+                attr = {"name": layer.name}
+                if layer.opacity != 1:
+                    attr["opacity"] = layer.opacity
+                if not layer.visible:
                     attr["visible"] = "0"
-                object_elem = ET.Element("object", attrib=clean_attr(attr))
+                elem = ET.Element("layer", attrib=clean_attr(attr))
 
-                if obj.ellipse:
-                    object_elem.append(ET.Element("ellipse"))
-                elif obj.polygon is not None:
-                    points = ' '.join(['{},{}'.format(*T)
-                                       for T in obj.polygon])
-                    poly_elem = ET.Element("polygon",
-                                           attrib={"points": points})
-                    object_elem.append(poly_elem)
-                elif obj.polyline is not None:
-                    points = ' '.join(['{},{}'.format(*T)
-                                       for T in obj.polyline])
-                    poly_elem = ET.Element("polyline",
-                                           attrib={"points": points})
-                    object_elem.append(poly_elem)
+                if layer.properties:
+                    elem.append(get_properties_elem(layer.properties))
 
-                elem.append(object_elem)
+                if data_encoding is None:
+                    data_elem = ET.Element("data")
 
-            root.append(elem)
+                    for tile in layer.tiles:
+                        attr = {"gid": tile}
+                        tile_elem = ET.Element("tile", attrib=clean_attr(attr))
+                        data_elem.append(tile_elem)
 
-        for imagelayer in self.imagelayers:
-            attr = {"name": imagelayer.name, "x": imagelayer.x,
-                    "y": imagelayer.y}
-            if imagelayer.opacity != 1:
-                attr["opacity"] = imagelayer.opacity
-            if not imagelayer.visible:
-                attr["visible"] = "0"
-            elem = ET.Element("imagelayer", attrib=clean_attr(attr))
+                    elem.append(data_elem)
+                else:
+                    attr = {"encoding": data_encoding,
+                            "compression": data_compression}
+                    data_elem = ET.Element("data", attrib=clean_attr(attr))
+                    data_elem.text = data_encode(layer.tiles, data_encoding,
+                                                 data_compression)
+                    elem.append(data_elem)
 
-            if imagelayer.properties:
-                elem.append(get_properties_elem(imagelayer.properties))
+                root.append(elem)
+            elif isinstance(layer, ObjectGroup):
+                attr = {"name": objectgroup.name, "color": objectgroup.color}
+                if objectgroup.opacity != 1:
+                    attr["opacity"] = objectgroup.opacity
+                if not objectgroup.visible:
+                    attr["visible"] = "0"
+                elem = ET.Element("objectgroup", attrib=clean_attr(attr))
 
-            if imagelayer.image:
-                elem.append(get_image_elem(imagelayer.image))
+                if objectgroup.properties:
+                    elem.append(get_properties_elem(objectgroup.properties))
 
-            root.append(elem)
+                for obj in objectgroup.objects:
+                    attr = {"name": obj.name, "type": obj.type,
+                            "x": obj.x, "y": obj.y, "gid": obj.gid}
+                    if obj.width:
+                        attr["width"] = obj.width
+                    if obj.height:
+                        attr["height"] = obj.height
+                    if obj.rotation:
+                        attr["rotation"] = obj.rotation
+                    if not obj.visible:
+                        attr["visible"] = "0"
+                    object_elem = ET.Element("object", attrib=clean_attr(attr))
+
+                    if obj.ellipse:
+                        object_elem.append(ET.Element("ellipse"))
+                    elif obj.polygon is not None:
+                        points = ' '.join(['{},{}'.format(*T)
+                                           for T in obj.polygon])
+                        poly_elem = ET.Element("polygon",
+                                               attrib={"points": points})
+                        object_elem.append(poly_elem)
+                    elif obj.polyline is not None:
+                        points = ' '.join(['{},{}'.format(*T)
+                                           for T in obj.polyline])
+                        poly_elem = ET.Element("polyline",
+                                               attrib={"points": points})
+                        object_elem.append(poly_elem)
+
+                    elem.append(object_elem)
+
+                root.append(elem)
+            elif isinstance(layer, ImageLayer):
+                attr = {"name": imagelayer.name, "x": imagelayer.x,
+                        "y": imagelayer.y}
+                if imagelayer.opacity != 1:
+                    attr["opacity"] = imagelayer.opacity
+                if not imagelayer.visible:
+                    attr["visible"] = "0"
+                elem = ET.Element("imagelayer", attrib=clean_attr(attr))
+
+                if imagelayer.properties:
+                    elem.append(get_properties_elem(imagelayer.properties))
+
+                if imagelayer.image:
+                    elem.append(get_image_elem(imagelayer.image))
+
+                root.append(elem)
 
         tree = ET.ElementTree(root)
         tree.write(fname, encoding="UTF-8", xml_declaration=True)
