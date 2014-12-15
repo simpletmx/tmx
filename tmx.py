@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 
 import os
@@ -44,6 +44,7 @@ import xml.etree.ElementTree as ET
 import base64
 import gzip
 import zlib
+import warnings
 
 import six
 
@@ -511,6 +512,10 @@ class TileMap(object):
                     elem.append(get_image_elem(imagelayer.image))
 
                 root.append(elem)
+            else:
+                e = "{} is not a supported layer type.".format(
+                    layer.__class__.__name__)
+                raise ValueError(e)
 
         tree = ET.ElementTree(root)
         tree.write(fname, encoding="UTF-8", xml_declaration=True)
