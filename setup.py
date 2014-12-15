@@ -24,7 +24,7 @@ your game's levels.
 """.strip()
 
 setup(name="tmx",
-      version="1.0.1",
+      version="1.1",
       description="Simple TMX library.",
       long_description=long_description,
       author="Julian Marchant",
@@ -39,6 +39,6 @@ setup(name="tmx",
                    "Topic :: Games/Entertainment",
                    "Topic :: Software Development"],
       license="Apache License 2.0",
-      packages=["tmx"],
-      requires=[],
+      py_modules=["tmx"],
+      requires=["six (>=1.4.0)"],
      )

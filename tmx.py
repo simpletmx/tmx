@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.0.1"
+__version__ = "1.1"
 
 
 import os
@@ -45,7 +45,7 @@ import base64
 import gzip
 import zlib
 
-from . import six
+import six
 
 __all__ = ["TileMap", "Image", "ImageLayer", "Layer", "Object", "ObjectGroup",
            "Property", "TerrainType", "Tile", "Tileset", "data_decode",
@@ -104,18 +104,11 @@ class TileMap(object):
 
     .. attribute:: layers
 
-       A list of :class:`Layer` objects indicating the map's (tile)
-       layers.
-
-    .. attribute:: objectgroups
-
-       A list of :class:`ObjectGroup` objects indicating the map's
-       object groups (a.k.a. object layers).
-
-    .. attribute:: imagelayers
-
-       A list of :class:`ImageLayer` objects indicating the map's image
-       layers.
+       A list of :class:`Layer`, :class:`ObjectGroup`, and
+       :class:`ImageLayer` objects indicating the map's tile layers,
+       object groups, and image layers, respectively.  Those that appear
+       in this list first are rendered first (i.e. furthest in the
+       back).
     """
 
     def __init__(self):
@@ -130,8 +123,6 @@ class TileMap(object):
         self.properties = []
         self.tilesets = []
         self.layers = []
-        self.objectgroups = []
-        self.imagelayers = []
 
     @classmethod
     def load(cls, fname):
@@ -313,9 +304,8 @@ class TileMap(object):
                                               ovisible, oproperties, oellipse,
                                               opolygon, opolyline))
 
-                self.objectgroups.append(ObjectGroup(name, color, opacity,
-                                                     visible, properties,
-                                                     objects))
+                self.layers.append(ObjectGroup(name, color, opacity, visible,
+                                               properties, objects))
             elif child.tag == "imagelayer":
                 name = child.attrib.get("name", "")
                 x = int(child.attrib.get("x", 0))
@@ -331,8 +321,8 @@ class TileMap(object):
                     elif ilchild.tag == "image":
                         image = get_image(ilchild)
 
-                self.imagelayers.append(ImageLayer(name, x, y, opacity,
-                                                   visible, properties, image))
+                self.layers.append(ImageLayer(name, x, y, opacity, visible,
+                                              properties, image))
 
         return self
 

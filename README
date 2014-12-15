@@ -19,11 +19,15 @@ tmx is a simple library which reads and writes the Tiled TMX format.
 
 INSTALLATION
 
-Run setup.py with the "install" command, e.g.:
+First, install the dependencies:
+
+- Python 2 (2.7 or later) or 3 (3.1 or later) <http://www.python.org>
+- Six 1.4.0 or later <https://pypi.python.org/pypi/six>
+
+Once you have all the dependencies, install tmx with the included
+setup.py script, e.g.:
 
     python setup.py install
-
-This library has been tested on Python 2.7 and Python 3.2.
 
 
 USAGE
