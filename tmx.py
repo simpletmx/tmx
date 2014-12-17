@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.1.2"
+__version__ = "1.1.3a0"
 
 
 import os
@@ -173,7 +173,7 @@ class TileMap(object):
             if child.tag == "properties":
                 self.properties.extend(get_properties(child))
             elif child.tag == "tileset":
-                firstgid = child.attrib.get("firstgid")
+                firstgid = int(child.attrib.get("firstgid"))
                 source = child.attrib.get("source")
 
                 if source is not None:
