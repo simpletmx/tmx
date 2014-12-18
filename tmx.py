@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.1.3a0"
+__version__ = "1.2a0"
 
 
 import os
@@ -48,9 +48,10 @@ import warnings
 
 import six
 
-__all__ = ["TileMap", "Image", "ImageLayer", "Layer", "Object", "ObjectGroup",
-           "Property", "TerrainType", "Tile", "Tileset", "data_decode",
-           "data_encode"]
+
+__all__ = ["TileMap", "Image", "ImageLayer", "Layer", "LayerTile", "Object",
+           "ObjectGroup", "Property", "TerrainType", "Tile", "Tileset",
+           "data_decode", "data_encode"]
 
 
 class TileMap(object):
@@ -249,11 +250,19 @@ class TileMap(object):
                         encoding = lchild.attrib.get("encoding")
                         compression = lchild.attrib.get("compression")
                         if encoding:
-                            tiles = data_decode(lchild.text, encoding,
-                                                compression)
+                            tile_n = data_decode(lchild.text, encoding,
+                                                 compression)
                         else:
-                            tiles = [int(tile.attrib.get("gid", 0))
-                                     for tile in lchild.findall("tile")]
+                            tile_n = [int(tile.attrib.get("gid", 0))
+                                      for tile in lchild.findall("tile")]
+
+                        for n in tile_n:
+                            gid = (n - (n & 2 ** 31) - (n & 2 ** 30) -
+                                   (n & 2 ** 29))
+                            hflip = bool(n & 2 ** 31)
+                            vflip = bool(n & 2 ** 30)
+                            dflip = bool(n & 2 ** 29)
+                            tiles.append(LayerTile(gid, hflip, vflip, dflip))
 
                 self.layers.append(Layer(name, opacity, visible, properties,
                                          tiles))
@@ -436,10 +445,11 @@ class TileMap(object):
                 if layer.properties:
                     elem.append(get_properties_elem(layer.properties))
 
+                tile_n = [int(i) for i in layer.tiles]
                 if data_encoding is None:
                     data_elem = ET.Element("data")
 
-                    for tile in layer.tiles:
+                    for tile in tile_n:
                         attr = {"gid": tile}
                         tile_elem = ET.Element("tile", attrib=clean_attr(attr))
                         data_elem.append(tile_elem)
@@ -449,7 +459,7 @@ class TileMap(object):
                     attr = {"encoding": data_encoding,
                             "compression": data_compression}
                     data_elem = ET.Element("data", attrib=clean_attr(attr))
-                    data_elem.text = data_encode(layer.tiles, data_encoding,
+                    data_elem.text = data_encode(tile_n, data_encoding,
                                                  data_compression)
                     elem.append(data_elem)
 
@@ -635,8 +645,8 @@ class Layer(object):
 
     .. attribute:: tiles
 
-       A list of global tile IDs indicating the tiles of the layer.  A
-       value of ``0`` indicates no tile at the respective position.
+       A list of :class:`LayerTile` objects indicating the tiles of the
+       layer.
     """
 
     def __init__(self, name, opacity=1, visible=True, properties=None,
@@ -646,6 +656,44 @@ class Layer(object):
         self.visible = visible
         self.properties = properties if properties else []
         self.tiles = tiles if tiles else []
+
+
+class LayerTile(object):
+    """
+    .. attribute:: gid
+
+       The global ID of the tile.  A value of ``0`` indicates no tile at
+       this position.
+
+    .. attribute:: hflip
+
+       Whether or not the tile is flipped horizontally.
+
+    .. attribute:: vflip
+
+       Whether or not the tile is flipped vertically.
+
+    .. attribute:: dflip
+
+       Whether or not the tile is flipped diagonally.
+    """
+
+    def __init__(self, gid, hflip=False, vflip=False, dflip=False):
+        self.gid = gid
+        self.hflip = hflip
+        self.vflip = vflip
+        self.dflip = dflip
+
+    def __int__(self):
+        r = self.gid
+        if self.hflip:
+            r |= 2 ** 31
+        if self.vflip:
+            r |= 2 ** 30
+        if self.dflip:
+            r |= 2 ** 29
+
+        return r
 
 
 class Object(object):

@@ -22,6 +22,8 @@ Other Classes
 
 .. autoclass:: tmx.Layer
 
+.. autoclass:: tmx.LayerTile
+
 .. autoclass:: tmx.Object
 
 .. autoclass:: tmx.ObjectGroup
