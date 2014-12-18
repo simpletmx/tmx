@@ -960,7 +960,7 @@ def data_decode(data, encoding, compression=None):
     if encoding == "csv":
         return [int(i) for i in data.strip().split(",")]
     elif encoding == "base64":
-        data = base64.b64decode(data.strip().encode("utf-8"))
+        data = base64.b64decode(data.strip().encode("latin1"))
 
         if compression == "gzip":
             # data = gzip.decompress(data)
@@ -973,9 +973,17 @@ def data_decode(data, encoding, compression=None):
             raise ValueError(e)
 
         if six.PY2:
-            return [ord(c) for c in data]
+            ndata = [ord(c) for c in data]
         else:
-            return [i for i in data]
+            ndata = [i for i in data]
+
+        data = []
+        for i in six.moves.range(0, len(ndata), 4):
+            n = (ndata[i]  + ndata[i + 1] * (2 ** 8) +
+                 ndata[i + 2] * (2 ** 16) + ndata[i + 3] * (2 ** 24))
+            data.append(n)
+
+        return data
     else:
         e = 'Encoding type "{}" not supported.'.format(encoding)
         raise ValueError(e)
@@ -1000,10 +1008,15 @@ def data_encode(data, encoding, compression=None):
     if encoding == "csv":
         return ','.join([str(i) for i in data])
     elif encoding == "base64":
+        ndata = []
+        for i in data:
+            n = [i % (2 ** 8), i // (2 ** 8), i // (2 ** 16), i // (2 ** 24)]
+            ndata.extend(n)
+
         if six.PY2:
-            data = b''.join([chr(i) for i in data])
+            data = b''.join([chr(i) for i in ndata])
         else:
-            data = b''.join([bytes((i,)) for i in data])
+            data = b''.join([bytes((i,)) for i in ndata])
 
         if compression == "gzip" and six.PY3:
             data = gzip.compress(data)
@@ -1013,7 +1026,7 @@ def data_encode(data, encoding, compression=None):
             e = 'Compression type "{}" not supported.'.format(compression)
             raise ValueError(e)
 
-        return base64.b64encode(data).decode('utf-8')
+        return base64.b64encode(data).decode("latin1")
     else:
         e = 'Encoding type "{}" not supported.'.format(encoding)
         raise ValueError(e)
