@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.2"
+__version__ = "1.2.1a0"
 
 
 import os
@@ -180,8 +180,10 @@ class TileMap(object):
                 if source is not None:
                     source = os.path.join(fd, source)
                     troot = ET.parse(source).getroot()
+                    td = os.path.dirname(source)
                 else:
                     troot = child
+                    td = fd
 
                 name = troot.attrib.get("name", "")
                 tilewidth = int(troot.attrib.get("tilewidth", 32))
@@ -203,7 +205,7 @@ class TileMap(object):
                     elif tchild.tag == "properties":
                         properties.extend(get_properties(tchild))
                     elif tchild.tag == "image":
-                        image = get_image(tchild)
+                        image = get_image(tchild, td)
                     elif tchild.tag == "terraintypes":
                         for terrain in tchild.findall("terrain"):
                             trname = terrain.attrib.get("name")
@@ -227,7 +229,7 @@ class TileMap(object):
                             if tichild.tag == "properties":
                                 tiproperties.extend(get_properties(tichild))
                             elif tichild.tag == "image":
-                                timage = get_image(tichild)
+                                timage = get_image(tichild, td)
                         tiles.append(Tile(tid, titerrain, tiprobability,
                                           tiproperties, timage))
 
