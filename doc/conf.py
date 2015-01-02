@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Simple TMX Library'
-copyright = '2014, Julian Marchant'
+copyright = '2014, 2015 Julian Marchant'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
