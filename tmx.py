@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.2.1"
+__version__ = "1.2.2a0"
 
 
 import os
@@ -304,12 +304,26 @@ class TileMap(object):
                                 oellipse = True
                             elif ochild.tag == "polygon":
                                 s = ochild.attrib.get("points", "").strip()
-                                opolygon = [tuple(c.split(','))
-                                            for c in s.split()]
+                                opolygon = []
+                                for coord in s.split():
+                                    pos = []
+                                    for n in coord.split(','):
+                                        if n.isdigit():
+                                            pos.append(int(n))
+                                        else:
+                                            pos.append(float(n))
+                                    opolygon.append(tuple(pos))
                             elif ochild.tag == "polyline":
                                 s = ochild.attrib.get("points", "").strip()
-                                opolyline = [tuple(c.split(','))
-                                             for c in s.split()]
+                                opolyline = []
+                                for coord in s.split():
+                                    pos = []
+                                    for n in coord.split(','):
+                                        if n.isdigit():
+                                            pos.append(int(n))
+                                        else:
+                                            pos.append(float(n))
+                                    opolyline.append(tuple(pos))
 
                         objects.append(Object(oname, otype, ox, oy, owidth,
                                               oheight, orotation, ogid,
