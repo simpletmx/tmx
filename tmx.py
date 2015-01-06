@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.2.2"
+__version__ = "1.2.3a0"
 
 
 import os
@@ -691,7 +691,8 @@ class LayerTile(object):
 
     .. attribute:: dflip
 
-       Whether or not the tile is flipped diagonally.
+       Whether or not the tile is flipped diagonally (X and Y axis
+       swapped).
     """
 
     def __init__(self, gid, hflip=False, vflip=False, dflip=False):
@@ -911,7 +912,8 @@ class Tile(object):
 
     .. attribute:: image
 
-       An :class:`Image` object indicating the tile's image.
+       An :class:`Image` object indicating the tile's image.  Set to
+       :const:`None` for no image.
     """
 
     def __init__(self, id_, terrain=None, probability=None, properties=None,
@@ -974,7 +976,8 @@ class Tileset(object):
 
     .. attribute:: image
 
-       An :class:`Image` object indicating the tileset's image.
+       An :class:`Image` object indicating the tileset's image.  Set to
+       :const:`None` for no image.
 
     .. attribute:: terraintypes
 
