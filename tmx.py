@@ -65,7 +65,18 @@ class TileMap(object):
 
     .. attribute:: orientation
 
-       Map orientation.  Can be "orthogonal", "isometric", or "staggered".
+       Map orientation.  Can be "orthogonal", "isometric", "staggered",
+       or "hexagonal".
+
+    .. attribute:: staggerindex
+
+       Can be "even" or "odd".  Set to :const:`None` to not set it.
+       Only meaningful for staggered and hexagonal maps.
+
+    .. attribute:: staggerdirection
+
+       Can be "rows" or "columns".  Set to :const:`None` to not set it.
+       Only meaningful for hexagonal maps.
 
     .. attribute:: width
 
@@ -82,6 +93,11 @@ class TileMap(object):
     .. attribute:: tileheight
 
        The height of a tile.
+
+    .. attribute:: hexsidelength
+
+       The length of the sides of hexagonal tiles.  Set to :const:`None`
+       to not set it.  Only meaningful for hexagonal maps.
 
     .. attribute:: backgroundcolor
 
@@ -116,10 +132,13 @@ class TileMap(object):
     def __init__(self):
         self.version = "1.0"
         self.orientation = "orthogonal"
+        self.staggerindex = None
+        self.staggerdirection = None
         self.width = 0
         self.height = 0
         self.tilewidth = 32
         self.tileheight = 32
+        self.hexsidelength = None
         self.backgroundcolor = None
         self.renderorder = "right-down"
         self.properties = []
@@ -139,10 +158,17 @@ class TileMap(object):
         fd = os.path.dirname(fname)
         self.version = root.attrib.get("version", self.version)
         self.orientation = root.attrib.get("orientation", self.orientation)
+        self.staggerindex = root.attrib.get("staggerindex", self.staggerindex)
+        self.staggerdirection = root.attrib.get("staggerdirection",
+                                                self.staggerdirection)
         self.width = int(root.attrib.get("width", self.width))
         self.height = int(root.attrib.get("height", self.height))
         self.tilewidth = int(root.attrib.get("tilewidth", self.tilewidth))
         self.tileheight = int(root.attrib.get("tileheight", self.tileheight))
+        self.hexsidelength = root.attrib.get("hexsidelength",
+                                             self.hexsidelength)
+        if self.hexsidelength is not None:
+            self.hexsidelength = int(self.hexsidelength)
         self.backgroundcolor = root.attrib.get("backgroundcolor")
         self.renderorder = root.attrib.get("renderorder", self.renderorder)
 
@@ -363,8 +389,11 @@ class TileMap(object):
             return new_d
 
         attr = {"version": self.version, "orientation": self.orientation,
+                "staggerindex": self.staggerindex,
+                "staggerdirection": self.staggerdirection,
                 "width": self.width, "height": self.height,
                 "tilewidth": self.tilewidth, "tileheight": self.tileheight,
+                "hexsidelength": self.hexsidelength,
                 "backgroundcolor": self.backgroundcolor,
                 "renderorder": self.renderorder}
         root = ET.Element("map", attrib=clean_attr(attr))
@@ -493,10 +522,8 @@ class TileMap(object):
                     elem.append(get_properties_elem(objectgroup.properties))
 
                 for obj in objectgroup.objects:
-                    attr = {"name": obj.name, "type": obj.type,
+                    attr = {"id": obj.id, "name": obj.name, "type": obj.type,
                             "x": obj.x, "y": obj.y, "gid": obj.gid}
-                    if obj.id is not None:
-                        attr["id"] = obj.id
                     if obj.width:
                         attr["width"] = obj.width
                     if obj.height:
@@ -719,6 +746,11 @@ class LayerTile(object):
 class Object(object):
 
     """
+    .. attribute:: id
+
+       Unique ID of the object as a string if set, or :const:`None`
+       otherwise.
+
     .. attribute:: name
 
        The name of the object.  An arbitrary string.
