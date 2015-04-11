@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.2.3"
+__version__ = "1.3a0"
 
 
 import os
@@ -280,6 +280,7 @@ class TileMap(object):
                     if ogchild.tag == "properties":
                         properties.extend(get_properties(ogchild))
                     elif ogchild.tag == "object":
+                        oid = ogchild.attrib.get("id")
                         oname = ogchild.attrib.get("name", "")
                         otype = ogchild.attrib.get("type", "")
                         ox = int(ogchild.attrib.get("x", 0))
@@ -328,7 +329,7 @@ class TileMap(object):
                         objects.append(Object(oname, otype, ox, oy, owidth,
                                               oheight, orotation, ogid,
                                               ovisible, oproperties, oellipse,
-                                              opolygon, opolyline))
+                                              opolygon, opolyline, oid))
 
                 self.layers.append(ObjectGroup(name, color, opacity, visible,
                                                properties, objects))
@@ -494,6 +495,8 @@ class TileMap(object):
                 for obj in objectgroup.objects:
                     attr = {"name": obj.name, "type": obj.type,
                             "x": obj.x, "y": obj.y, "gid": obj.gid}
+                    if obj.id is not None:
+                        attr["id"] = obj.id
                     if obj.width:
                         attr["width"] = obj.width
                     if obj.height:
@@ -779,11 +782,12 @@ class Object(object):
 
     def __init__(self, name, type_, x, y, width=0, height=0, rotation=0,
                  gid=None, visible=True, properties=None, ellipse=False,
-                 polygon=None, polyline=None):
+                 polygon=None, polyline=None, id_=None):
         self.name = name
         self.type = type_
         self.x = x
         self.y = y
+        self.id = id_
         self.width = width
         self.height = height
         self.rotation = rotation
