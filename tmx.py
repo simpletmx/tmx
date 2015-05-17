@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.3"
+__version__ = "1.3.1a0"
 
 
 import os
@@ -693,6 +693,33 @@ class Layer(object):
 
        A list of :class:`LayerTile` objects indicating the tiles of the
        layer.
+
+       The coordinates of each tile is determined by the map's
+       orientation and render order.  Each orientation has a different
+       basic layout:
+
+       - "orthogonal" -- Each tile in a row is rendered to the left or
+         right of the previous tile, depending on the map's renderorder
+         attribute, at a distance of the map's tilewidth attribute from
+         the previous tile's location. Each row is up or down compared
+         to the previous row, depending on the map's renderorder
+         attribute, at a distance of the map's tileheight attribute from
+         the previous tile's location.
+       - "isometric" -- Each tile in a row has a horizontal distance of
+         half the map's tilewidth attribute and a vertical distance of
+         half the map's tileheight attribute from the previous tile's
+         location.  If the map's renderorder attribute indicates
+         "right", each tile is to the right and down compared to the
+         previous tile.  If the map's renderorder attribute indicates
+         "left", each tile is to the left and up compared to the
+         previous tile.  The distance between rows is the same as the
+         distance between tiles.  If the map's renderorder attribute
+         indicates "down", each row is to the left and down compared to
+         the previous row.  If the map's renderorder attribute indicates
+         "up", each row is to the right and up compared to the previous
+         row.
+       - "staggered" -- ???
+       - "hexagonal" -- ???
     """
 
     def __init__(self, name, opacity=1, visible=True, properties=None,
@@ -761,11 +788,14 @@ class Object(object):
 
     .. attribute:: x
 
-       The x coordinate of the object in pixels.
+       The x coordinate of the object in pixels.  This is the
+       left edge of the object in orthogonal orientation, and the center
+       of the object otherwise.
 
     .. attribute:: y
 
-       The y coordinate of the object in pixels.
+       The y coordinate of the object in pixels.  This is the bottom
+       edge of the object.
 
     .. attribute:: width
 
