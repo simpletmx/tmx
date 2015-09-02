@@ -695,30 +695,30 @@ class Layer(object):
        layer.
 
        The coordinates of each tile is determined by the map's
-       orientation and render order.  Each orientation has a different
-       basic layout:
+       orientation and the tile's index within this list:
 
-       - "orthogonal" -- Each tile in a row is rendered to the left or
-         right of the previous tile, depending on the map's renderorder
-         attribute, at a distance of the map's tilewidth attribute from
-         the previous tile's location. Each row is up or down compared
-         to the previous row, depending on the map's renderorder
-         attribute, at a distance of the map's tileheight attribute from
-         the previous tile's location.
-       - "isometric" -- Each tile in a row has a horizontal distance of
-         half the map's tilewidth attribute and a vertical distance of
-         half the map's tileheight attribute from the previous tile's
-         location.  If the map's renderorder attribute indicates
-         "right", each tile is to the right and down compared to the
-         previous tile.  If the map's renderorder attribute indicates
-         "left", each tile is to the left and up compared to the
-         previous tile.  The distance between rows is the same as the
-         distance between tiles.  If the map's renderorder attribute
-         indicates "down", each row is to the left and down compared to
-         the previous row.  If the map's renderorder attribute indicates
-         "up", each row is to the right and up compared to the previous
-         row.
-       - "staggered" -- ???
+       - "orthogonal" -- The list is split into rows of tiles.  Each
+         tile in a row is rendered to the right of the previous tile's
+         location at a distance of the map's tilewidth attribute.  Each
+         row is rendered below the previous row's location at a distance
+         of the map's tileheight attribute.
+       - "isometric" -- The list is split into rows of tiles.  Each tile
+         in a row is rendered to the right of the previous tile's
+         location at a distance of half the map's tilewidth attribute
+         and below the previous tile's location at a distance of half
+         the map's tileheight attribute.  Each row is rendered to the
+         left of the previous row's location at a distance of half the
+         map's tilewidth attribute and below the previous row's location
+         at a distance of half the map's tileheight attribute.
+       - "staggered" -- The list is split into rows of tiles.  Each tile
+         in a row is rendered to the right of the previous tile's
+         location at a distance of the map's tilewidth attribute.  Each
+         row is rendered below the previous row's location at a distance
+         of half the map's tileheight attribute.  Assuming that the
+         first row is assigned an index of ``0``, the rows with
+         odd-numbered indexes are rendered to the right of the location
+         of rows with even-numbered indexes at a distance of half the
+         map's tilewidth attribute.
        - "hexagonal" -- ???
     """
 
