@@ -25,9 +25,12 @@ First, install the dependencies:
 - Six 1.4.0 or later <https://pypi.python.org/pypi/six>
 
 Once you have all the dependencies, install tmx with the included
-setup.py script, e.g.:
+setup.py script, e.g. with "python setup.py install".
 
-    python setup.py install
+Alternatively, you can just place the "tmx" folder into the same
+directory as the Python program that uses it. This can be a good idea
+for the distribution of a game, since it reduces the number of
+dependencies the user needs to install.
 
 
 USAGE
