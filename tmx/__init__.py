@@ -24,10 +24,11 @@ attributes of the returned :class:`tmx.TileMap` object, modify the
 attributes to your liking, and save your changes with
 :meth:`tmx.TileMap.save`.  That's it!  Simple, isn't it?
 
-This documentation explains what each attribute means, but if you want
-to read the TMX spec itself, see this page:
+At the request of the developer of Tiled, this documentation does not
+explain in detail what each attribute means. For that, please see the
+TMX format specification, found here:
 
-https://github.com/bjorn/tiled/wiki/TMX-Map-Format
+http://doc.mapeditor.org/reference/tmx-map-format/
 """
 
 from __future__ import division
@@ -694,32 +695,9 @@ class Layer(object):
        A list of :class:`LayerTile` objects indicating the tiles of the
        layer.
 
-       The coordinates of each tile is determined by the map's
-       orientation and the tile's index within this list:
-
-       - "orthogonal" -- The list is split into rows of tiles.  Each
-         tile in a row is rendered to the right of the previous tile's
-         location at a distance of the map's tilewidth attribute.  Each
-         row is rendered below the previous row's location at a distance
-         of the map's tileheight attribute.
-       - "isometric" -- The list is split into rows of tiles.  Each tile
-         in a row is rendered to the right of the previous tile's
-         location at a distance of half the map's tilewidth attribute
-         and below the previous tile's location at a distance of half
-         the map's tileheight attribute.  Each row is rendered to the
-         left of the previous row's location at a distance of half the
-         map's tilewidth attribute and below the previous row's location
-         at a distance of half the map's tileheight attribute.
-       - "staggered" -- The list is split into rows of tiles.  Each tile
-         in a row is rendered to the right of the previous tile's
-         location at a distance of the map's tilewidth attribute.  Each
-         row is rendered below the previous row's location at a distance
-         of half the map's tileheight attribute.  Assuming that the
-         first row is assigned an index of ``0``, the rows with
-         odd-numbered indexes are rendered to the right of the location
-         of rows with even-numbered indexes at a distance of half the
-         map's tilewidth attribute.
-       - "hexagonal" -- ???
+       The coordinates of each tile is determined by the tile's index
+       within this list.  Exactly how the tiles are positioned is
+       determined by the map orientation.
     """
 
     def __init__(self, name, opacity=1, visible=True, properties=None,
@@ -956,14 +934,8 @@ class Tile(object):
        Defines the terrain type of each corner of the tile, given as
        comma-separated indexes in the list of terrain types in the order
        top-left, top-right, bottom-left, bottom-right.  Leaving out a
-       value means that corner has no terrain.
-
-       For example, a value of ``"0,3,,1"`` indicates that the top-left
-       corner has the first terrain type, the top-right corner has the
-       fourth terrain type, the bottom-left corner has no terrain type,
-       and the bottom-right corner has the second terrain type.
-
-       Set to :const:`None` for no terrain.
+       value means that corner has no terrain. Set to :const:`None` for
+       no terrain.
 
     .. attribute:: probability
 
