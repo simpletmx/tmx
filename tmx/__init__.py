@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.3.1a0"
+__version__ = "1.4a0"
 
 
 import os
@@ -217,6 +217,9 @@ class TileMap(object):
                 tileheight = int(troot.attrib.get("tileheight", 32))
                 spacing = int(troot.attrib.get("spacing", 0))
                 margin = int(troot.attrib.get("margin", 0))
+                tilecount = troot.attrib.get("tilecount")
+                if tilecount is not None:
+                    tilecount = int(tilecount)
 
                 xoffset = 0
                 yoffset = 0
@@ -263,12 +266,14 @@ class TileMap(object):
                 self.tilesets.append(Tileset(firstgid, name, tilewidth,
                                              tileheight, source, spacing,
                                              margin, xoffset, yoffset,
-                                             properties, image, terraintypes,
-                                             tiles))
+                                             tilecount, properties, image,
+                                             terraintypes, tiles))
             elif child.tag == "layer":
                 name = child.attrib.get("name", "")
                 opacity = float(child.attrib.get("opacity", 1))
                 visible = bool(int(child.attrib.get("visible", True)))
+                offsetx = int(child.attrib.get("offsetx", 0))
+                offsety = int(child.attrib.get("offsety", 0))
                 properties = []
                 tiles = []
 
@@ -293,13 +298,15 @@ class TileMap(object):
                             dflip = bool(n & 2 ** 29)
                             tiles.append(LayerTile(gid, hflip, vflip, dflip))
 
-                self.layers.append(Layer(name, opacity, visible, properties,
-                                         tiles))
+                self.layers.append(Layer(name, opacity, visible, offsetx,
+                                         offsety, properties, tiles))
             elif child.tag == "objectgroup":
                 name = child.attrib.get("name", "")
                 color = child.attrib.get("color")
                 opacity = float(child.attrib.get("opacity", 1))
                 visible = bool(int(child.attrib.get("visible", True)))
+                offsetx = int(child.attrib.get("offsetx", 0))
+                offsety = int(child.attrib.get("offsety", 0))
                 properties = []
                 objects = []
 
@@ -359,7 +366,8 @@ class TileMap(object):
                                               opolygon, opolyline, oid))
 
                 self.layers.append(ObjectGroup(name, color, opacity, visible,
-                                               properties, objects))
+                                               offsetx, offsety, properties,
+                                               objects))
             elif child.tag == "imagelayer":
                 name = child.attrib.get("name", "")
                 x = int(child.attrib.get("x", 0))
@@ -436,6 +444,8 @@ class TileMap(object):
                 attr["spacing"] = tileset.spacing
             if tileset.margin:
                 attr["margin"] = tileset.margin
+            if tileset.tilecount:
+                attr["tilecount"] = tileset.tilecount
             elem = ET.Element("tileset", attrib=clean_attr(attr))
 
             if tileset.xoffset or tileset.yoffset:
@@ -487,6 +497,10 @@ class TileMap(object):
                     attr["opacity"] = layer.opacity
                 if not layer.visible:
                     attr["visible"] = "0"
+                if layer.offsetx:
+                    attr["offsetx"] = layer.offsetx
+                if layer.offsety:
+                    attr["offsety"] = layer.offsety
                 elem = ET.Element("layer", attrib=clean_attr(attr))
 
                 if layer.properties:
@@ -517,6 +531,10 @@ class TileMap(object):
                     attr["opacity"] = objectgroup.opacity
                 if not objectgroup.visible:
                     attr["visible"] = "0"
+                if layer.offsetx:
+                    attr["offsetx"] = layer.offsetx
+                if layer.offsety:
+                    attr["offsety"] = layer.offsety
                 elem = ET.Element("objectgroup", attrib=clean_attr(attr))
 
                 if objectgroup.properties:
@@ -685,6 +703,14 @@ class Layer(object):
 
        Whether or not the layer is visible.
 
+    .. attribute:: offsetx
+
+       Rendering offset for this layer in pixels.
+
+    .. attribute:: offsety
+
+       Rendering offset for this layer in pixels.
+
     .. attribute:: properties
 
        A list of :class:`Property` objects indicating the properties of
@@ -700,8 +726,8 @@ class Layer(object):
        determined by the map orientation.
     """
 
-    def __init__(self, name, opacity=1, visible=True, properties=None,
-                 tiles=None):
+    def __init__(self, name, opacity=1, visible=True, offsetx=0, offsety=0,
+                 properties=None, tiles=None):
         self.name = name
         self.opacity = opacity
         self.visible = visible
@@ -860,6 +886,14 @@ class ObjectGroup(object):
 
        Whether or not the object group is visible.
 
+    .. attribute:: offsetx
+
+       Rendering offset for this layer in pixels.
+
+    .. attribute:: offsety
+
+       Rendering offset for this layer in pixels.
+
     .. attribute:: properties
 
        A list of :class:`Property` objects indicating the object group's
@@ -871,8 +905,8 @@ class ObjectGroup(object):
        objects.
     """
 
-    def __init__(self, name, color=None, opacity=1, visible=True,
-                 properties=None, objects=None):
+    def __init__(self, name, color=None, opacity=1, visible=True, offsetx=0,
+                 offsety=0, properties=None, objects=None):
         self.name = name
         self.color = color
         self.opacity = opacity
@@ -1007,6 +1041,11 @@ class Tileset(object):
 
        The vertical offset of the tileset in pixels (positive is down).
 
+    .. attribute:: tilecount
+
+       The number of tiles in this tileset.  Set to :const:`None` to not
+       specify this.
+
     .. attribute:: properties
 
        A list of :class:`Property` objects indicating the tileset's
@@ -1029,8 +1068,8 @@ class Tileset(object):
     """
 
     def __init__(self, firstgid, name, tilewidth, tileheight, source=None,
-                 spacing=0, margin=0, xoffset=0, yoffset=0, properties=None,
-                 image=None, terraintypes=None, tiles=None):
+                 spacing=0, margin=0, xoffset=0, yoffset=0, tilecount=None,
+                 properties=None, image=None, terraintypes=None, tiles=None):
         self.firstgid = firstgid
         self.name = name
         self.tilewidth = tilewidth
@@ -1044,6 +1083,7 @@ class Tileset(object):
         self.image = image
         self.terraintypes = terraintypes if terraintypes else []
         self.tiles = tiles if tiles else []
+        self.tilecount = tilecount
 
 
 def data_decode(data, encoding, compression=None):
