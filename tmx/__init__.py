@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.4"
+__version__ = "1.4.1"
 
 
 import os
@@ -731,6 +731,8 @@ class Layer(object):
         self.name = name
         self.opacity = opacity
         self.visible = visible
+        self.offsetx = offsetx
+        self.offsety = offsety
         self.properties = properties if properties else []
         self.tiles = tiles if tiles else []
 
@@ -911,6 +913,8 @@ class ObjectGroup(object):
         self.color = color
         self.opacity = opacity
         self.visible = visible
+        self.offsetx = offsetx
+        self.offsety = offsety
         self.properties = properties if properties else []
         self.objects = objects if objects else []
 
@@ -1079,11 +1083,11 @@ class Tileset(object):
         self.margin = margin
         self.xoffset = xoffset
         self.yoffset = yoffset
+        self.tilecount = tilecount
         self.properties = properties if properties else []
         self.image = image
         self.terraintypes = terraintypes if terraintypes else []
         self.tiles = tiles if tiles else []
-        self.tilecount = tilecount
 
 
 def data_decode(data, encoding, compression=None):
