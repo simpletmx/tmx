@@ -1,5 +1,5 @@
 # Simple TMX library
-# Copyright (c) 2014, 2015 Julian Marchant <onpon4@riseup.net>
+# Copyright (c) 2014-2016 onpon4 <onpon4@riseup.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.4.1"
+__version__ = "1.5a0"
 
 
 import os
@@ -69,15 +69,11 @@ class TileMap(object):
        Map orientation.  Can be "orthogonal", "isometric", "staggered",
        or "hexagonal".
 
-    .. attribute:: staggerindex
+    .. attribute:: renderorder
 
-       Can be "even" or "odd".  Set to :const:`None` to not set it.
-       Only meaningful for staggered and hexagonal maps.
-
-    .. attribute:: staggerdirection
-
-       Can be "rows" or "columns".  Set to :const:`None` to not set it.
-       Only meaningful for hexagonal maps.
+       The order in which tiles are rendered.  Can be ``"right-down"``,
+       ``"right-up"``, ``"left-down"``, or ``"left-up"``.  Default is
+       ``"right-down"``.
 
     .. attribute:: width
 
@@ -95,10 +91,17 @@ class TileMap(object):
 
        The height of a tile.
 
-    .. attribute:: hexsidelength
+    .. attribute:: staggeraxis
 
-       The length of the sides of hexagonal tiles.  Set to :const:`None`
-       to not set it.  Only meaningful for hexagonal maps.
+       Determines which axis is staggered.  Can be "x" or "y".  Set to
+       :const:`None` to not set it.  Only meaningful for staggered and
+       hexagonal maps.
+
+    .. attribute:: staggerindex
+
+       Determines what indexes along the staggered axis are shifted.
+       Can be "even" or "odd".  Set to :const:`None` to not set it.
+       Only meaningful for staggered and hexagonal maps.
 
     .. attribute:: backgroundcolor
 
@@ -106,11 +109,10 @@ class TileMap(object):
        ``"FF0000"`` or ``"#00FF00"``), or :const:`None` if no background
        color is defined.
 
-    .. attribute:: renderorder
+    .. attribute:: nextobjectid
 
-       The order in which tiles are rendered.  Can be ``"right-down"``,
-       ``"right-up"``, ``"left-down"``, or ``"left-up"``.  Default is
-       ``"right-down"``.
+       The next available ID for new objects.  Set to :const:`None` to
+       not set it.
 
     .. attribute:: properties
 
@@ -133,15 +135,15 @@ class TileMap(object):
     def __init__(self):
         self.version = "1.0"
         self.orientation = "orthogonal"
-        self.staggerindex = None
-        self.staggerdirection = None
+        self.renderorder = "right-down"
         self.width = 0
         self.height = 0
         self.tilewidth = 32
         self.tileheight = 32
-        self.hexsidelength = None
+        self.staggeraxis = None
+        self.staggerindex = None
         self.backgroundcolor = None
-        self.renderorder = "right-down"
+        self.nextobjectid = None
         self.properties = []
         self.tilesets = []
         self.layers = []
@@ -159,19 +161,17 @@ class TileMap(object):
         fd = os.path.dirname(fname)
         self.version = root.attrib.get("version", self.version)
         self.orientation = root.attrib.get("orientation", self.orientation)
-        self.staggerindex = root.attrib.get("staggerindex", self.staggerindex)
-        self.staggerdirection = root.attrib.get("staggerdirection",
-                                                self.staggerdirection)
+        self.renderorder = root.attrib.get("renderorder", self.renderorder)
         self.width = int(root.attrib.get("width", self.width))
         self.height = int(root.attrib.get("height", self.height))
         self.tilewidth = int(root.attrib.get("tilewidth", self.tilewidth))
         self.tileheight = int(root.attrib.get("tileheight", self.tileheight))
-        self.hexsidelength = root.attrib.get("hexsidelength",
-                                             self.hexsidelength)
-        if self.hexsidelength is not None:
-            self.hexsidelength = int(self.hexsidelength)
+        self.staggeraxis = root.attrib.get("staggeraxis", self.staggeraxis)
+        self.staggerindex = root.attrib.get("staggerindex", self.staggerindex)
         self.backgroundcolor = root.attrib.get("backgroundcolor")
-        self.renderorder = root.attrib.get("renderorder", self.renderorder)
+        self.nextobjectid = root.attrib.get("nextobjectid", self.nextobjectid)
+        if self.nextobjectid is not None:
+            self.nextobjectid = int(self.nextobjectid)
 
         def get_properties(properties_root):
             properties = []
@@ -220,6 +220,9 @@ class TileMap(object):
                 tilecount = troot.attrib.get("tilecount")
                 if tilecount is not None:
                     tilecount = int(tilecount)
+                columns = troot.attrib.get("columns")
+                if columns is not None:
+                    columns = int(columns)
 
                 xoffset = 0
                 yoffset = 0
@@ -266,8 +269,8 @@ class TileMap(object):
                 self.tilesets.append(Tileset(firstgid, name, tilewidth,
                                              tileheight, source, spacing,
                                              margin, xoffset, yoffset,
-                                             tilecount, properties, image,
-                                             terraintypes, tiles))
+                                             tilecount, columns, properties,
+                                             image, terraintypes, tiles))
             elif child.tag == "layer":
                 name = child.attrib.get("name", "")
                 opacity = float(child.attrib.get("opacity", 1))
@@ -307,6 +310,7 @@ class TileMap(object):
                 visible = bool(int(child.attrib.get("visible", True)))
                 offsetx = int(child.attrib.get("offsetx", 0))
                 offsety = int(child.attrib.get("offsety", 0))
+                draworder = child.attrib.get("draworder")
                 properties = []
                 objects = []
 
@@ -366,12 +370,12 @@ class TileMap(object):
                                               opolygon, opolyline, oid))
 
                 self.layers.append(ObjectGroup(name, color, opacity, visible,
-                                               offsetx, offsety, properties,
-                                               objects))
+                                               offsetx, offsety, draworder,
+                                               properties, objects))
             elif child.tag == "imagelayer":
                 name = child.attrib.get("name", "")
-                x = int(child.attrib.get("x", 0))
-                y = int(child.attrib.get("y", 0))
+                x = int(child.attrib.get("offsetx", child.attrib.get("x", 0)))
+                y = int(child.attrib.get("offsety", child.attrib.get("y", 0)))
                 opacity = float(child.attrib.get("opacity", 1))
                 visible = bool(int(child.attrib.get("visible", True)))
                 properties = []
@@ -398,13 +402,12 @@ class TileMap(object):
             return new_d
 
         attr = {"version": self.version, "orientation": self.orientation,
+                "renderorder": self.renderorder, "width": self.width,
+                "height": self.height, "tilewidth": self.tilewidth,
+                "tileheight": self.tileheight, "staggeraxis": self.staggeraxis,
                 "staggerindex": self.staggerindex,
-                "staggerdirection": self.staggerdirection,
-                "width": self.width, "height": self.height,
-                "tilewidth": self.tilewidth, "tileheight": self.tileheight,
-                "hexsidelength": self.hexsidelength,
                 "backgroundcolor": self.backgroundcolor,
-                "renderorder": self.renderorder}
+                "nextobjectid": self.nextobjectid}
         root = ET.Element("map", attrib=clean_attr(attr))
         fd = os.path.dirname(fname)
 
@@ -446,6 +449,8 @@ class TileMap(object):
                 attr["margin"] = tileset.margin
             if tileset.tilecount:
                 attr["tilecount"] = tileset.tilecount
+            if tileset.columns:
+                attr["columns"] = tileset.columns
             elem = ET.Element("tileset", attrib=clean_attr(attr))
 
             if tileset.xoffset or tileset.yoffset:
@@ -535,6 +540,8 @@ class TileMap(object):
                     attr["offsetx"] = layer.offsetx
                 if layer.offsety:
                     attr["offsety"] = layer.offsety
+                if layer.draworder:
+                    attr["draworder"] = layer.draworder
                 elem = ET.Element("objectgroup", attrib=clean_attr(attr))
 
                 if objectgroup.properties:
@@ -572,8 +579,9 @@ class TileMap(object):
 
                 root.append(elem)
             elif isinstance(layer, ImageLayer):
-                attr = {"name": imagelayer.name, "x": imagelayer.x,
-                        "y": imagelayer.y}
+                attr = {"name": imagelayer.name, "offsetx": imagelayer.offsetx,
+                        "offsety": imagelayer.offsety, "x": imagelayer.offsetx,
+                        "y": imagelayer.offsety}
                 if imagelayer.opacity != 1:
                     attr["opacity"] = imagelayer.opacity
                 if not imagelayer.visible:
@@ -651,11 +659,11 @@ class ImageLayer(object):
 
        The name of the image layer.
 
-    .. attribute:: x
+    .. attribute:: offsetx
 
        The x position of the image layer in pixels.
 
-    .. attribute:: y
+    .. attribute:: offsety
 
        The y position of the image layer in pixels.
 
@@ -677,11 +685,11 @@ class ImageLayer(object):
        An :class:`Image` object indicating the image of the image layer.
     """
 
-    def __init__(self, name, x, y, opacity=1, visible=True, properties=None,
-                 image=None):
+    def __init__(self, name, offsetx, offsety, opacity=1, visible=True,
+                 properties=None, image=None):
         self.name = name
-        self.x = x
-        self.y = y
+        self.offsetx = offsetx
+        self.offsety = offsety
         self.opacity = opacity
         self.visible = visible
         self.properties = properties if properties else []
@@ -896,6 +904,11 @@ class ObjectGroup(object):
 
        Rendering offset for this layer in pixels.
 
+    .. attribute:: draworder
+
+       Can be "topdown" or "index".  Set to :const:`None` to not define
+       this.
+
     .. attribute:: properties
 
        A list of :class:`Property` objects indicating the object group's
@@ -908,13 +921,14 @@ class ObjectGroup(object):
     """
 
     def __init__(self, name, color=None, opacity=1, visible=True, offsetx=0,
-                 offsety=0, properties=None, objects=None):
+                 offsety=0, draworder=None, properties=None, objects=None):
         self.name = name
         self.color = color
         self.opacity = opacity
         self.visible = visible
         self.offsetx = offsetx
         self.offsety = offsety
+        self.draworder = None
         self.properties = properties if properties else []
         self.objects = objects if objects else []
 
@@ -1050,6 +1064,11 @@ class Tileset(object):
        The number of tiles in this tileset.  Set to :const:`None` to not
        specify this.
 
+    .. attribute:: columns
+
+       The number of tile columns in the tileset.  Set to :const:`None`
+       to not specify this.
+
     .. attribute:: properties
 
        A list of :class:`Property` objects indicating the tileset's
@@ -1073,7 +1092,8 @@ class Tileset(object):
 
     def __init__(self, firstgid, name, tilewidth, tileheight, source=None,
                  spacing=0, margin=0, xoffset=0, yoffset=0, tilecount=None,
-                 properties=None, image=None, terraintypes=None, tiles=None):
+                 columns=None, properties=None, image=None, terraintypes=None,
+                 tiles=None):
         self.firstgid = firstgid
         self.name = name
         self.tilewidth = tilewidth
@@ -1084,6 +1104,7 @@ class Tileset(object):
         self.xoffset = xoffset
         self.yoffset = yoffset
         self.tilecount = tilecount
+        self.columns = columns
         self.properties = properties if properties else []
         self.image = image
         self.terraintypes = terraintypes if terraintypes else []
