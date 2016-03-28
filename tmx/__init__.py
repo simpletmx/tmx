@@ -180,7 +180,7 @@ class TileMap(object):
                 value = prop.attrib.get("value")
                 type_ = prop.attrib.get("type", "string")
                 if type_ == "bool":
-                    value = (value.lower() in {"true", "1"})
+                    value = (value.lower() == "true")
                 elif type_ == "int":
                     value = int(value)
                 elif type_ == "float":
@@ -424,6 +424,7 @@ class TileMap(object):
                 value = str(prop.value)
                 type_ = None
                 if isinstance(prop.value, bool):
+                    value = "true" if prop.value else "false"
                     type_ = "bool"
                 elif isinstance(prop.value, int):
                     type_ = "int"
