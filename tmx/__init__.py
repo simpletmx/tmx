@@ -178,6 +178,13 @@ class TileMap(object):
             for prop in properties_root.findall("property"):
                 name = prop.attrib.get("name")
                 value = prop.attrib.get("value")
+                type_ = prop.attrib.get("type", "string")
+                if type_ == "bool":
+                    value = (value.lower() in {"true", "1"})
+                elif type_ == "int":
+                    value = int(value)
+                elif type_ == "float":
+                    value = float(value)
                 properties.append(Property(name, value))
             return properties
 
@@ -414,7 +421,19 @@ class TileMap(object):
         def get_properties_elem(properties):
             elem = ET.Element("properties")
             for prop in properties:
-                prop_attr = {"name": prop.name, "value": prop.value}
+                value = str(prop.value)
+                type_ = None
+                if isinstance(prop.value, bool):
+                    type_ = "bool"
+                elif isinstance(prop.value, int):
+                    type_ = "int"
+                elif isinstance(prop.value, float):
+                    type_ = "float"
+
+                prop_attr = {"name": prop.name, "value": value}
+                if type_:
+                    prop_attr["type"] = type_
+
                 elem.append(ET.Element("property",
                                        attrib=clean_attr(prop_attr)))
 
