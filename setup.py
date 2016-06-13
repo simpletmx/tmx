@@ -24,7 +24,7 @@ your game's levels.
 """.strip()
 
 setup(name="tmx",
-      version="1.4.1",
+      version="1.5",
       description="Simple TMX library.",
       long_description=long_description,
       author="Julian Marchant",
