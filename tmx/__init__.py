@@ -1155,7 +1155,7 @@ class Frame(object):
     """
     .. attribute:: tileid
 
-       Global ID of the tile for this aimation frame.
+       Global ID of the tile for this animation frame.
 
     .. attribute:: duration
 
