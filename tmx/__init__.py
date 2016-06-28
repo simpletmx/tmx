@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.5"
+__version__ = "1.6a0"
 
 
 import os
@@ -204,6 +204,16 @@ class TileMap(object):
 
             return Image(format_, source, trans, width, height, data)
 
+        def get_animation(animation_root):
+            animation = []
+
+            for frchild in animation_root:
+                tid = int(frchild.attrib.get("tileid"))
+                duration = int(frchild.attrib.get("duration"))
+                animation.append(Frame(tid, duration))
+
+            return animation
+
         for child in root:
             if child.tag == "properties":
                 self.properties.extend(get_properties(child))
@@ -265,13 +275,16 @@ class TileMap(object):
                         tiprobability = tchild.attrib.get("probability")
                         tiproperties = []
                         timage = None
+                        tianimation = None
                         for tichild in tchild:
                             if tichild.tag == "properties":
                                 tiproperties.extend(get_properties(tichild))
                             elif tichild.tag == "image":
                                 timage = get_image(tichild, td)
+                            elif tichild.tag == "animation":
+                                tianimation = get_animation(tichild)
                         tiles.append(Tile(tid, titerrain, tiprobability,
-                                          tiproperties, timage))
+                                          tiproperties, timage, tianimation))
 
                 self.tilesets.append(Tileset(firstgid, name, tilewidth,
                                              tileheight, source, spacing,
@@ -1024,15 +1037,21 @@ class Tile(object):
 
        An :class:`Image` object indicating the tile's image.  Set to
        :const:`None` for no image.
+
+    .. attribute:: animation
+
+       A list of :class:`Frame` objects indicating this tile's animation.
+       Set to :const:`None` for no animation.
     """
 
     def __init__(self, id_, terrain=None, probability=None, properties=None,
-                 image=None):
+                 image=None, animation=None):
         self.id = id_
         self.terrain = terrain
         self.probability = probability
         self.properties = properties if properties else []
         self.image = image
+        self.animation = animation
 
 
 class Tileset(object):
@@ -1129,6 +1148,23 @@ class Tileset(object):
         self.image = image
         self.terraintypes = terraintypes if terraintypes else []
         self.tiles = tiles if tiles else []
+
+
+class Frame(object):
+
+    """
+    .. attribute:: tileid
+
+       Global ID of the tile for this aimation frame.
+
+    .. attribute:: duration
+
+       Time length of this frame in milliseconds.
+    """
+
+    def __init__(self, tid, duration):
+        self.tileid = tid
+        self.duration = duration
 
 
 def data_decode(data, encoding, compression=None):
