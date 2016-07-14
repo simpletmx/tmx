@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.6"
+__version__ = "1.7a0"
 
 
 import os
@@ -103,6 +103,11 @@ class TileMap(object):
        Can be "even" or "odd".  Set to :const:`None` to not set it.
        Only meaningful for staggered and hexagonal maps.
 
+    .. attribute:: hexsidelength
+
+       Side length of the hexagon in hexagonal tiles.  Set to
+       :const:`None` to not set it.  Only meaningful for hexagonal maps.
+
     .. attribute:: backgroundcolor
 
        The background color of the map as a hex string (e.g.
@@ -142,6 +147,7 @@ class TileMap(object):
         self.tileheight = 32
         self.staggeraxis = None
         self.staggerindex = None
+        self.hexsidelength = None
         self.backgroundcolor = None
         self.nextobjectid = None
         self.properties = []
@@ -168,6 +174,8 @@ class TileMap(object):
         self.tileheight = int(root.attrib.get("tileheight", self.tileheight))
         self.staggeraxis = root.attrib.get("staggeraxis", self.staggeraxis)
         self.staggerindex = root.attrib.get("staggerindex", self.staggerindex)
+        self.hexsidelength = int(root.attrib.get("hexsidelength",
+                                                 self.hexsidelength))
         self.backgroundcolor = root.attrib.get("backgroundcolor")
         self.nextobjectid = root.attrib.get("nextobjectid", self.nextobjectid)
         if self.nextobjectid is not None:
@@ -426,6 +434,7 @@ class TileMap(object):
                 "height": self.height, "tilewidth": self.tilewidth,
                 "tileheight": self.tileheight, "staggeraxis": self.staggeraxis,
                 "staggerindex": self.staggerindex,
+                "hexsidelength": self.hexsidelength,
                 "backgroundcolor": self.backgroundcolor,
                 "nextobjectid": self.nextobjectid}
         root = ET.Element("map", attrib=clean_attr(attr))
