@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.8a0"
+__version__ = "1.8"
 
 
 import os
@@ -174,8 +174,10 @@ class TileMap(object):
         self.tileheight = int(root.attrib.get("tileheight", self.tileheight))
         self.staggeraxis = root.attrib.get("staggeraxis", self.staggeraxis)
         self.staggerindex = root.attrib.get("staggerindex", self.staggerindex)
-        self.hexsidelength = int(root.attrib.get("hexsidelength",
-                                                 self.hexsidelength))
+        self.hexsidelength = root.attrib.get("hexsidelength",
+                                             self.hexsidelength)
+        if self.hexsidelength is not None:
+            self.hexsidelength = int(self.hexsidelength)
         self.backgroundcolor = root.attrib.get("backgroundcolor")
         self.nextobjectid = root.attrib.get("nextobjectid", self.nextobjectid)
         if self.nextobjectid is not None:
