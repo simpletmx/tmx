@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.7"
+__version__ = "1.8a0"
 
 
 import os
@@ -52,7 +52,7 @@ import six
 
 __all__ = ["TileMap", "Image", "ImageLayer", "Layer", "LayerTile", "Object",
            "ObjectGroup", "Property", "TerrainType", "Tile", "Tileset",
-           "data_decode", "data_encode"]
+           "Frame", "data_decode", "data_encode"]
 
 
 class TileMap(object):
@@ -215,9 +215,18 @@ class TileMap(object):
         def get_animation(animation_root):
             animation = []
 
-            for frchild in animation_root:
-                tid = int(frchild.attrib.get("tileid"))
-                duration = int(frchild.attrib.get("duration"))
+            for child in animation_root.findall("frame"):
+                tid = child.attrib.get("tileid")
+                if tid is not None:
+                    tid = int(tid)
+                else:
+                    tid = 0
+                duration = child.attrib.get("duration")
+                if duration is not None:
+                    duration = int(duration)
+                else:
+                    duration = 0
+
                 animation.append(Frame(tid, duration))
 
             return animation
@@ -476,6 +485,15 @@ class TileMap(object):
 
             return elem
 
+        def get_animation_elem(animation, fd=fd):
+            elem = ET.Element("animation")
+            for animation_obj in animation:
+                attr = {"tileid": animation_obj.tileid,
+                        "duration": animation_obj.duration}
+                elem.append(ET.Element("frame", attrib=clean_attr(attr)))
+
+            return elem
+
         if self.properties:
             root.append(get_properties_elem(self.properties))
 
@@ -505,6 +523,9 @@ class TileMap(object):
 
             if tileset.image:
                 elem.append(get_image_elem(tileset.image))
+
+            if tileset.animation:
+                elem.append(get_animation_elem(tileset.animation))
 
             if tileset.terraintypes:
                 ttypes_elem = ET.Element("terraintypes")
