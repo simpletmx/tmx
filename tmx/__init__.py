@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.8"
+__version__ = "1.8.1a0"
 
 
 import os
@@ -431,8 +431,22 @@ class TileMap(object):
 
         return self
 
-    def save(self, fname, data_encoding=None, data_compression=None):
-        """Save the object to the file with the indicated name."""
+    def save(self, fname, data_encoding="base64", data_compression=True):
+        """
+        Save the object to the file with the indicated name.
+
+        Arguments:
+
+        - ``data_encoding`` -- The encoding to use for layers.  Can be
+          ``"base64"`` or ``"csv"``.  Set to :const:`None` for the
+          default encoding (currently ``"base64"``).
+        - ``data_compression`` -- Whether or not compression should be
+          used on layers if possible (currently only possible for
+          base64-encoded data).
+        """
+        if data_encoding is None:
+            data_encoding = "base64"
+
         def clean_attr(d):
             new_d = {}
             for i in d:
@@ -577,22 +591,12 @@ class TileMap(object):
                     elem.append(get_properties_elem(layer.properties))
 
                 tile_n = [int(i) for i in layer.tiles]
-                if data_encoding is None:
-                    data_elem = ET.Element("data")
-
-                    for tile in tile_n:
-                        attr = {"gid": tile}
-                        tile_elem = ET.Element("tile", attrib=clean_attr(attr))
-                        data_elem.append(tile_elem)
-
-                    elem.append(data_elem)
-                else:
-                    attr = {"encoding": data_encoding,
-                            "compression": data_compression}
-                    data_elem = ET.Element("data", attrib=clean_attr(attr))
-                    data_elem.text = data_encode(tile_n, data_encoding,
-                                                 data_compression)
-                    elem.append(data_elem)
+                attr = {"encoding": data_encoding,
+                        "compression": "zlib" if data_compression else None}
+                data_elem = ET.Element("data", attrib=clean_attr(attr))
+                data_elem.text = data_encode(tile_n, data_encoding,
+                                             data_compression)
+                elem.append(data_elem)
 
                 root.append(elem)
             elif isinstance(layer, ObjectGroup):
@@ -1247,7 +1251,7 @@ def data_decode(data, encoding, compression=None):
         raise ValueError(e)
 
 
-def data_encode(data, encoding, compression=None):
+def data_encode(data, encoding, compression=True):
     """
     Encode a list of integers and return the encoded data.
 
@@ -1259,9 +1263,8 @@ def data_encode(data, encoding, compression=None):
     - ``data`` -- The list of integers to encode.
     - ``encoding`` -- The encoding of the data.  Can be ``"base64"`` or
       ``"csv"``.
-    - ``compression`` -- The compression method used.  Valid compression
-      methods are ``"gzip"`` and ``"zlib"``.  Set to :const:`None` for
-      no compression.
+    - ``compression`` -- Whether or not compression should be used if
+      supported.
     """
     if encoding == "csv":
         return ','.join([str(i) for i in data])
@@ -1276,13 +1279,8 @@ def data_encode(data, encoding, compression=None):
         else:
             data = b''.join([bytes((i,)) for i in ndata])
 
-        if compression == "gzip" and six.PY3:
-            data = gzip.compress(data)
-        elif compression == "zlib":
+        if compression:
             data = zlib.compress(data)
-        elif compression:
-            e = 'Compression type "{}" not supported.'.format(compression)
-            raise ValueError(e)
 
         return base64.b64encode(data).decode("latin1")
     else:
