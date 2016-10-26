@@ -190,6 +190,8 @@ class TileMap(object):
             for prop in properties_root.findall("property"):
                 name = prop.attrib.get("name")
                 value = prop.attrib.get("value")
+                if not value:
+                    value = prop.text
                 type_ = prop.attrib.get("type", "string")
                 if type_ == "bool":
                     value = (value.lower() == "true")
@@ -478,6 +480,7 @@ class TileMap(object):
             for prop in properties:
                 value = str(prop.value)
                 type_ = None
+                text = None
                 if isinstance(prop.value, bool):
                     value = "true" if prop.value else "false"
                     type_ = "bool"
@@ -491,12 +494,16 @@ class TileMap(object):
                     value = prop.value.as_posix()
                     type_ = "file"
 
-                prop_attr = {"name": prop.name, "value": value}
+                prop_attr = {"name": prop.name}
+                if '\n' in value:
+                    text = value
+                else:
+                    prop_attr["value"] = value
                 if type_:
                     prop_attr["type"] = type_
 
-                elem.append(ET.Element("property",
-                                       attrib=clean_attr(prop_attr)))
+                elem.append(ET.Element(
+                    "property", attrib=clean_attr(prop_attr), text=text))
 
             return elem
 
