@@ -1,5 +1,5 @@
 # Simple TMX library
-# Copyright (c) 2014-2016 onpon4 <onpon4@riseup.net>
+# Copyright (c) 2014-2016 Julie Marchant <onpon4@riseup.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.8.1"
+__version__ = "1.9a0"
 
 
 import os
@@ -46,6 +46,7 @@ import base64
 import gzip
 import zlib
 import warnings
+import pathlib
 
 import six
 
@@ -110,9 +111,8 @@ class TileMap(object):
 
     .. attribute:: backgroundcolor
 
-       The background color of the map as a hex string (e.g.
-       ``"FF0000"`` or ``"#00FF00"``), or :const:`None` if no background
-       color is defined.
+       A :class:`Color` object indicating the background color of the
+       map, or :const:`None` if no background color is defined.
 
     .. attribute:: nextobjectid
 
@@ -179,11 +179,13 @@ class TileMap(object):
         if self.hexsidelength is not None:
             self.hexsidelength = int(self.hexsidelength)
         self.backgroundcolor = root.attrib.get("backgroundcolor")
+        if self.backgroundcolor:
+            self.backgroundcolor = Color(self.backgroundcolor)
         self.nextobjectid = root.attrib.get("nextobjectid", self.nextobjectid)
         if self.nextobjectid is not None:
             self.nextobjectid = int(self.nextobjectid)
 
-        def get_properties(properties_root):
+        def get_properties(properties_root, fd=fd):
             properties = []
             for prop in properties_root.findall("property"):
                 name = prop.attrib.get("name")
@@ -195,6 +197,10 @@ class TileMap(object):
                     value = int(value)
                 elif type_ == "float":
                     value = float(value)
+                elif type_ == "file":
+                    value = pathlib.PurePath(os.path.join(fd, value))
+                elif type_ == "color":
+                    value = Color(value)
                 properties.append(Property(name, value))
             return properties
 
@@ -345,6 +351,8 @@ class TileMap(object):
             elif child.tag == "objectgroup":
                 name = child.attrib.get("name", "")
                 color = child.attrib.get("color")
+                if color:
+                    color = Color(color)
                 opacity = float(child.attrib.get("opacity", 1))
                 visible = bool(int(child.attrib.get("visible", True)))
                 offsetx = int(child.attrib.get("offsetx", 0))
@@ -454,18 +462,18 @@ class TileMap(object):
                     new_d[i] = str(d[i])
             return new_d
 
+        bgc = str(self.backgroundcolor) if self.backgroundcolor else None
         attr = {"version": self.version, "orientation": self.orientation,
                 "renderorder": self.renderorder, "width": self.width,
                 "height": self.height, "tilewidth": self.tilewidth,
                 "tileheight": self.tileheight, "staggeraxis": self.staggeraxis,
                 "staggerindex": self.staggerindex,
-                "hexsidelength": self.hexsidelength,
-                "backgroundcolor": self.backgroundcolor,
+                "hexsidelength": self.hexsidelength, "backgroundcolor": bgc,
                 "nextobjectid": self.nextobjectid}
         root = ET.Element("map", attrib=clean_attr(attr))
         fd = os.path.dirname(fname)
 
-        def get_properties_elem(properties):
+        def get_properties_elem(properties, fd=fd):
             elem = ET.Element("properties")
             for prop in properties:
                 value = str(prop.value)
@@ -477,6 +485,11 @@ class TileMap(object):
                     type_ = "int"
                 elif isinstance(prop.value, float):
                     type_ = "float"
+                elif isinstance(prop.value, Color):
+                    type_ = "color"
+                elif isinstance(prop.value, pathlib.PurePath):
+                    value = prop.value.as_posix()
+                    type_ = "file"
 
                 prop_attr = {"name": prop.name, "value": value}
                 if type_:
@@ -491,7 +504,8 @@ class TileMap(object):
             attr = {"format": image_obj.format, "trans": image_obj.trans,
                     "width": image_obj.width, "height": image_obj.height}
             if image_obj.source:
-                attr["source"] = os.path.relpath(image_obj.source, fd)
+                pth = pathlib.PurePath(os.path.relpath(image_obj.source, fd))
+                attr["source"] = pth.as_posix()
             elem = ET.Element("image", attrib=clean_attr(attr))
 
             if image_obj.data is not None:
@@ -518,7 +532,8 @@ class TileMap(object):
                     "tilewidth": tileset.tilewidth,
                     "tileheight": tileset.tileheight}
             if tileset.source:
-                attr["source"] = os.path.relpath(tileset.source, fd)
+                pth = pathlib.PurePath(os.path.relpath(tileset.source, fd))
+                attr["source"] = pth.as_posix()
             if tileset.spacing:
                 attr["spacing"] = tileset.spacing
             if tileset.margin:
@@ -600,7 +615,8 @@ class TileMap(object):
 
                 root.append(elem)
             elif isinstance(layer, ObjectGroup):
-                attr = {"name": objectgroup.name, "color": objectgroup.color}
+                c = str(objectgroup.color) if objectgroup.color else None
+                attr = {"name": objectgroup.name, "color": c}
                 if objectgroup.opacity != 1:
                     attr["opacity"] = objectgroup.opacity
                 if not objectgroup.visible:
@@ -673,6 +689,113 @@ class TileMap(object):
         tree.write(fname, encoding="UTF-8", xml_declaration=True)
 
 
+class Color(object):
+
+    """
+    .. attribute:: red
+
+       The red component of the color as an integer, where ``0``
+       indicates no red intensity and ``255`` indicates full red
+       intensity.
+
+    .. attribute:: green
+
+       The green component of the color as an integer, where ``0``
+       indicates no green intensity and ``255`` indicates full green
+       intensity.
+
+    .. attribute:: blue
+
+       The blue component of the color as an integer, where ``0``
+       indicates no blue intensity and ``255`` indicates full blue
+       intensity.
+
+    .. attribute:: alpha
+
+       The alpha transparency of the color as an integer, where ``0``
+       indicates full transparency and ``255`` indicates full opacity.
+
+    .. attribute:: hex_string
+
+       The hex string representation of the color used by the TMX file.
+       The format of the string is either ``"#RRGGBB"`` or
+       ``"#AARRGGBB"``.  The hash at the beginning is optional.
+    """
+
+    def __init__(self, hex_string="#000000"):
+        self.hex_string = hex_string
+
+    @property
+    def red(self):
+        return self.__r
+
+    @red.setter
+    def red(self, value):
+        self.__r = max(0, min(value, 255))
+
+    @property
+    def green(self):
+        return self.__g
+
+    @green.setter
+    def green(self, value):
+        self.__g = max(0, min(value, 255))
+
+    @property
+    def blue(self):
+        return self.__b
+
+    @blue.setter
+    def blue(self, value):
+        self.__b = max(0, min(value, 255))
+
+    @property
+    def alpha(self):
+        return self.__a
+
+    @alpha.setter
+    def alpha(self, value):
+        self.__a = max(0, min(value, 255))
+
+    @property
+    def hex_string(self):
+        if self.alpha == 255:
+            r, g, b = [hex(c)[2:].zfill(2) for c in (self.red, self.green,
+                                                     self.blue)]
+            return "#{}{}{}".format(r, g, b)
+        else:
+            r, g, b, a = [hex(c)[2:].zfill(2) for c in (self.red, self.green,
+                                                        self.blue, self.alpha)]
+            return "#{}{}{}{}".format(a, r, g, b)
+
+    @hex_string.setter
+    def hex_string(self, value):
+        if value.startswith("#"):
+            value = value[1:]
+
+        if len(value) == 6:
+            r, g, b = [int(value[i:(i + 2)], 16)
+                       for i in six.moves.range(0, 6, 2)]
+            self.red, self.green, self.blue = r, g, b
+        elif len(value) == 8:
+            a, r, g, b = [int(value[i:(i + 2)], 16) for i in range(0, 8, 2)]
+            self.red, self.green, self.blue, self.alpha = r, g, b, a
+        else:
+            raise ValueError("Invalid color string.")
+
+    def __iter__(self):
+        return str(self)
+
+    def __repr__(self):
+        return 'tmx.Color("{}")'.format(self.hex_string)
+
+    def __str__(self):
+        return self.hex_string
+
+    def __getitem__(self, index):
+        return str(self)[index]
+
+
 class Image(object):
 
     """
@@ -689,9 +812,8 @@ class Image(object):
 
     .. attribute:: trans
 
-       The transparent color of the image as a hex string (e.g.
-       ``"FF0000"`` or ``"#00FF00"``), or :const:`None` if no color is
-       treated as transparent.
+       A :class:`Color` object indicating the transparent color of the
+       image, or :const:`None` if no color is treated as transparent.
 
     .. attribute:: width
 
@@ -953,9 +1075,9 @@ class ObjectGroup(object):
 
     .. attribute:: color
 
-       The color used to display the objects in this group as a hex
-       string (e.g. ``"FF0000"`` or ``"#00FF00"``).  Set to
-       :const:`None` for no color definition.
+       A :class:`Color` object indicating the color used to display the
+       objects in this group.  Set to :const:`None` for no color
+       definition.
 
     .. attribute:: opacity
 
@@ -1012,6 +1134,18 @@ class Property(object):
     .. attribute:: value
 
        The value of the property.
+       
+       The following types are specially recognized by the TMX format
+       and preserved when saving:
+
+       - Integers
+       - Floats
+       - Booleans
+       - :class:`Color` objects
+       - :class:`pathlib.PurePath` objects
+
+       Any other type is implicitly converted to and stored as a string
+       when the TMX file is saved.
     """
 
     def __init__(self, name, value):
