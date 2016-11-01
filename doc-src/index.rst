@@ -21,6 +21,8 @@ tmx.TileMap
 Other Classes
 =============
 
+.. autoclass:: tmx.Color
+
 .. autoclass:: tmx.Image
 
 .. autoclass:: tmx.ImageLayer

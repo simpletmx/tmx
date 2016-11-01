@@ -51,9 +51,9 @@ import pathlib
 import six
 
 
-__all__ = ["TileMap", "Image", "ImageLayer", "Layer", "LayerTile", "Object",
-           "ObjectGroup", "Property", "TerrainType", "Tile", "Tileset",
-           "Frame", "data_decode", "data_encode"]
+__all__ = ["TileMap", "Color", "Image", "ImageLayer", "Layer", "LayerTile",
+           "Object", "ObjectGroup", "Property", "TerrainType", "Tile",
+           "Tileset", "Frame", "data_decode", "data_encode"]
 
 
 class TileMap(object):
