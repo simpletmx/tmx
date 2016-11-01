@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.9a0"
+__version__ = "1.9"
 
 
 import os

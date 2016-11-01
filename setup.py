@@ -1,5 +1,5 @@
 # setup.py
-# Copyright (c) 2012, 2013, 2014 Julie Marchant <onpon4@riseup.net>
+# Copyright (c) 2012-2016 Julie Marchant <onpon4@riseup.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ your game's levels.
 """.strip()
 
 setup(name="tmx",
-      version="1.9a0",
+      version="1.9",
       description="Simple TMX library.",
       long_description=long_description,
       author="Julie Marchant",
