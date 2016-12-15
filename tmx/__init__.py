@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.9"
+__version__ = "1.9.1a0"
 
 
 import os
@@ -784,6 +784,7 @@ class Color(object):
             r, g, b = [int(value[i:(i + 2)], 16)
                        for i in six.moves.range(0, 6, 2)]
             self.red, self.green, self.blue = r, g, b
+            self.alpha = 255
         elif len(value) == 8:
             a, r, g, b = [int(value[i:(i + 2)], 16) for i in range(0, 8, 2)]
             self.red, self.green, self.blue, self.alpha = r, g, b, a
@@ -794,7 +795,7 @@ class Color(object):
         return str(self)
 
     def __repr__(self):
-        return 'tmx.Color("{}")'.format(self.hex_string)
+        return self.hex_string
 
     def __str__(self):
         return self.hex_string
