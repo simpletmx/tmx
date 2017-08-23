@@ -37,7 +37,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.9.1"
+__version__ = "1.10a0"
 
 
 import os
@@ -130,11 +130,11 @@ class TileMap(object):
 
     .. attribute:: layers
 
-       A list of :class:`Layer`, :class:`ObjectGroup`, and
-       :class:`ImageLayer` objects indicating the map's tile layers,
-       object groups, and image layers, respectively.  Those that appear
-       in this list first are rendered first (i.e. furthest in the
-       back).
+       A list of :class:`Layer`, :class:`ObjectGroup`,
+       :class:`GroupLayer`, and :class:`ImageLayer` objects indicating
+       the map's tile layers, object groups, group layers, and image
+       layers, respectively.  Those that appear in this list first are
+       rendered first (i.e. furthest in the back).
     """
 
     def __init__(self):
@@ -241,6 +241,150 @@ class TileMap(object):
 
             return animation
 
+        def get_layer(layer_root):
+            name = layer_root.attrib.get("name", "")
+            opacity = float(layer_root.attrib.get("opacity", 1))
+            visible = bool(int(layer_root.attrib.get("visible", True)))
+            offsetx = int(layer_root.attrib.get("offsetx", 0))
+            offsety = int(layer_root.attrib.get("offsety", 0))
+            properties = []
+            tiles = []
+
+            for child in layer_root:
+                if child.tag == "properties":
+                    properties.extend(get_properties(child))
+                elif child.tag == "data":
+                    encoding = child.attrib.get("encoding")
+                    compression = child.attrib.get("compression")
+                    if encoding:
+                        tile_n = data_decode(child.text, encoding,
+                                             compression)
+                    else:
+                        tile_n = [int(tile.attrib.get("gid", 0))
+                                  for tile in child.findall("tile")]
+
+                    for n in tile_n:
+                        gid = (n - (n & 2 ** 31) - (n & 2 ** 30) -
+                               (n & 2 ** 29))
+                        hflip = bool(n & 2 ** 31)
+                        vflip = bool(n & 2 ** 30)
+                        dflip = bool(n & 2 ** 29)
+                        tiles.append(LayerTile(gid, hflip, vflip, dflip))
+
+            return Layer(name, opacity, visible, offsetx, offsety, properties,
+                         tiles)
+
+        def get_objectgroup(layer_root):
+            name = layer_root.attrib.get("name", "")
+            color = layer_root.attrib.get("color")
+            if color:
+                color = Color(color)
+            opacity = float(layer_root.attrib.get("opacity", 1))
+            visible = bool(int(layer_root.attrib.get("visible", True)))
+            offsetx = int(layer_root.attrib.get("offsetx", 0))
+            offsety = int(layer_root.attrib.get("offsety", 0))
+            draworder = layer_root.attrib.get("draworder")
+            properties = []
+            objects = []
+
+            for ogchild in layer_root:
+                if ogchild.tag == "properties":
+                    properties.extend(get_properties(ogchild))
+                elif ogchild.tag == "object":
+                    oid = ogchild.attrib.get("id")
+                    oname = ogchild.attrib.get("name", "")
+                    otype = ogchild.attrib.get("type", "")
+                    ox = int(ogchild.attrib.get("x", 0))
+                    oy = int(ogchild.attrib.get("y", 0))
+                    owidth = int(ogchild.attrib.get("width", 0))
+                    oheight = int(ogchild.attrib.get("height", 0))
+                    orotation = float(ogchild.attrib.get("rotation", 0))
+                    ogid = ogchild.attrib.get("gid")
+                    if ogid is not None:
+                        ogid = int(ogid)
+                    ovisible = bool(int(ogchild.attrib.get("visible",
+                                                           True)))
+                    oproperties = []
+                    oellipse = False
+                    opolygon = None
+                    opolyline = None
+
+                    for ochild in ogchild:
+                        if ochild.tag == "properties":
+                            oproperties.extend(get_properties(ochild))
+                        elif ochild.tag == "ellipse":
+                            oellipse = True
+                        elif ochild.tag == "polygon":
+                            s = ochild.attrib.get("points", "").strip()
+                            opolygon = []
+                            for coord in s.split():
+                                pos = []
+                                for n in coord.split(','):
+                                    if n.isdigit():
+                                        pos.append(int(n))
+                                    else:
+                                        pos.append(float(n))
+                                opolygon.append(tuple(pos))
+                        elif ochild.tag == "polyline":
+                            s = ochild.attrib.get("points", "").strip()
+                            opolyline = []
+                            for coord in s.split():
+                                pos = []
+                                for n in coord.split(','):
+                                    if n.isdigit():
+                                        pos.append(int(n))
+                                    else:
+                                        pos.append(float(n))
+                                opolyline.append(tuple(pos))
+
+                    objects.append(Object(oname, otype, ox, oy, owidth,
+                                          oheight, orotation, ogid,
+                                          ovisible, oproperties, oellipse,
+                                          opolygon, opolyline, oid))
+
+            return ObjectGroup(name, color, opacity, visible, offsetx, offsety,
+                               draworder, properties, objects)
+
+        def get_imagelayer(layer_root):
+            name = layer_root.attrib.get("name", "")
+            x = int(layer_root.attrib.get("offsetx", layer_root.attrib.get("x", 0)))
+            y = int(layer_root.attrib.get("offsety", layer_root.attrib.get("y", 0)))
+            opacity = float(layer_root.attrib.get("opacity", 1))
+            visible = bool(int(layer_root.attrib.get("visible", True)))
+            properties = []
+            image = None
+
+            for child in layer_root:
+                if child.tag == "properties":
+                    properties.extend(get_properties(child))
+                elif child.tag == "image":
+                    image = get_image(child)
+
+            return ImageLayer(name, x, y, opacity, visible, properties, image)
+
+        def get_grouplayer(layer_root):
+            name = layer_root.attrib.get("name", "")
+            x = int(layer_root.attrib.get("offsetx", layer_root.attrib.get("x", 0)))
+            y = int(layer_root.attrib.get("offsety", layer_root.attrib.get("y", 0)))
+            opacity = float(layer_root.attrib.get("opacity", 1))
+            visible = bool(int(layer_root.attrib.get("visible", True)))
+            properties = []
+            layers = []
+
+            for child in layer_root:
+                if child.tag == "properties":
+                    properties.extend(get_properties(child))
+                elif child.tag == "layer":
+                    layers.append(get_layer(child))
+                elif child.tag == "objectgroup":
+                    layers.append(get_objectgroup(child))
+                elif child.tag == "imagelayer":
+                    layers.append(get_imagelayer(child))
+                elif child.tag == "group":
+                    layers.append(get_grouplayer(child))
+
+            return GroupLayer(name, x, y, opacity, visible, properties, layers)
+
         for child in root:
             if child.tag == "properties":
                 self.properties.extend(get_properties(child))
@@ -319,125 +463,13 @@ class TileMap(object):
                                              tilecount, columns, properties,
                                              image, terraintypes, tiles))
             elif child.tag == "layer":
-                name = child.attrib.get("name", "")
-                opacity = float(child.attrib.get("opacity", 1))
-                visible = bool(int(child.attrib.get("visible", True)))
-                offsetx = int(child.attrib.get("offsetx", 0))
-                offsety = int(child.attrib.get("offsety", 0))
-                properties = []
-                tiles = []
-
-                for lchild in child:
-                    if lchild.tag == "properties":
-                        properties.extend(get_properties(lchild))
-                    elif lchild.tag == "data":
-                        encoding = lchild.attrib.get("encoding")
-                        compression = lchild.attrib.get("compression")
-                        if encoding:
-                            tile_n = data_decode(lchild.text, encoding,
-                                                 compression)
-                        else:
-                            tile_n = [int(tile.attrib.get("gid", 0))
-                                      for tile in lchild.findall("tile")]
-
-                        for n in tile_n:
-                            gid = (n - (n & 2 ** 31) - (n & 2 ** 30) -
-                                   (n & 2 ** 29))
-                            hflip = bool(n & 2 ** 31)
-                            vflip = bool(n & 2 ** 30)
-                            dflip = bool(n & 2 ** 29)
-                            tiles.append(LayerTile(gid, hflip, vflip, dflip))
-
-                self.layers.append(Layer(name, opacity, visible, offsetx,
-                                         offsety, properties, tiles))
+                self.layers.append(get_layer(child))
             elif child.tag == "objectgroup":
-                name = child.attrib.get("name", "")
-                color = child.attrib.get("color")
-                if color:
-                    color = Color(color)
-                opacity = float(child.attrib.get("opacity", 1))
-                visible = bool(int(child.attrib.get("visible", True)))
-                offsetx = int(child.attrib.get("offsetx", 0))
-                offsety = int(child.attrib.get("offsety", 0))
-                draworder = child.attrib.get("draworder")
-                properties = []
-                objects = []
-
-                for ogchild in child:
-                    if ogchild.tag == "properties":
-                        properties.extend(get_properties(ogchild))
-                    elif ogchild.tag == "object":
-                        oid = ogchild.attrib.get("id")
-                        oname = ogchild.attrib.get("name", "")
-                        otype = ogchild.attrib.get("type", "")
-                        ox = int(ogchild.attrib.get("x", 0))
-                        oy = int(ogchild.attrib.get("y", 0))
-                        owidth = int(ogchild.attrib.get("width", 0))
-                        oheight = int(ogchild.attrib.get("height", 0))
-                        orotation = float(ogchild.attrib.get("rotation", 0))
-                        ogid = ogchild.attrib.get("gid")
-                        if ogid is not None:
-                            ogid = int(ogid)
-                        ovisible = bool(int(ogchild.attrib.get("visible",
-                                                               True)))
-                        oproperties = []
-                        oellipse = False
-                        opolygon = None
-                        opolyline = None
-
-                        for ochild in ogchild:
-                            if ochild.tag == "properties":
-                                oproperties.extend(get_properties(ochild))
-                            elif ochild.tag == "ellipse":
-                                oellipse = True
-                            elif ochild.tag == "polygon":
-                                s = ochild.attrib.get("points", "").strip()
-                                opolygon = []
-                                for coord in s.split():
-                                    pos = []
-                                    for n in coord.split(','):
-                                        if n.isdigit():
-                                            pos.append(int(n))
-                                        else:
-                                            pos.append(float(n))
-                                    opolygon.append(tuple(pos))
-                            elif ochild.tag == "polyline":
-                                s = ochild.attrib.get("points", "").strip()
-                                opolyline = []
-                                for coord in s.split():
-                                    pos = []
-                                    for n in coord.split(','):
-                                        if n.isdigit():
-                                            pos.append(int(n))
-                                        else:
-                                            pos.append(float(n))
-                                    opolyline.append(tuple(pos))
-
-                        objects.append(Object(oname, otype, ox, oy, owidth,
-                                              oheight, orotation, ogid,
-                                              ovisible, oproperties, oellipse,
-                                              opolygon, opolyline, oid))
-
-                self.layers.append(ObjectGroup(name, color, opacity, visible,
-                                               offsetx, offsety, draworder,
-                                               properties, objects))
+                self.layers.append(get_objectgroup(child))
             elif child.tag == "imagelayer":
-                name = child.attrib.get("name", "")
-                x = int(child.attrib.get("offsetx", child.attrib.get("x", 0)))
-                y = int(child.attrib.get("offsety", child.attrib.get("y", 0)))
-                opacity = float(child.attrib.get("opacity", 1))
-                visible = bool(int(child.attrib.get("visible", True)))
-                properties = []
-                image = None
-
-                for ilchild in child:
-                    if ilchild.tag == "properties":
-                        properties.extend(get_properties(ilchild))
-                    elif ilchild.tag == "image":
-                        image = get_image(ilchild)
-
-                self.layers.append(ImageLayer(name, x, y, opacity, visible,
-                                              properties, image))
+                self.layers.append(get_imagelayer(child))
+            elif child.tag == "group":
+                self.layers.append(get_grouplayer(child))
 
         return self
 
@@ -531,6 +563,131 @@ class TileMap(object):
 
             return elem
 
+        def get_layer_elem(layer, fd=fd, data_encoding=data_encoding,
+                           data_compression=data_compression):
+            attr = {"name": layer.name}
+            if layer.opacity != 1:
+                attr["opacity"] = layer.opacity
+            if not layer.visible:
+                attr["visible"] = "0"
+            if layer.offsetx:
+                attr["offsetx"] = layer.offsetx
+            if layer.offsety:
+                attr["offsety"] = layer.offsety
+            elem = ET.Element("layer", attrib=clean_attr(attr))
+
+            if layer.properties:
+                elem.append(get_properties_elem(layer.properties))
+
+            tile_n = [int(i) for i in layer.tiles]
+            attr = {"encoding": data_encoding,
+                    "compression": "zlib" if data_compression else None}
+            data_elem = ET.Element("data", attrib=clean_attr(attr))
+            data_elem.text = data_encode(tile_n, data_encoding,
+                                         data_compression)
+            elem.append(data_elem)
+
+            return elem
+
+        def get_objectgroup_elem(layer, fd=fd, data_encoding=data_encoding,
+                                 data_compression=data_compression):
+            c = str(layer.color) if layer.color else None
+            attr = {"name": layer.name, "color": c}
+            if layer.opacity != 1:
+                attr["opacity"] = layer.opacity
+            if not layer.visible:
+                attr["visible"] = "0"
+            if layer.offsetx:
+                attr["offsetx"] = layer.offsetx
+            if layer.offsety:
+                attr["offsety"] = layer.offsety
+            if layer.draworder:
+                attr["draworder"] = layer.draworder
+            elem = ET.Element("objectgroup", attrib=clean_attr(attr))
+
+            if layer.properties:
+                elem.append(get_properties_elem(layer.properties))
+
+            for obj in layer.objects:
+                attr = {"id": obj.id, "name": obj.name, "type": obj.type,
+                        "x": obj.x, "y": obj.y, "gid": obj.gid}
+                if obj.width:
+                    attr["width"] = obj.width
+                if obj.height:
+                    attr["height"] = obj.height
+                if obj.rotation:
+                    attr["rotation"] = obj.rotation
+                if not obj.visible:
+                    attr["visible"] = "0"
+                object_elem = ET.Element("object", attrib=clean_attr(attr))
+
+                if obj.ellipse:
+                    object_elem.append(ET.Element("ellipse"))
+                elif obj.polygon is not None:
+                    points = ' '.join(['{},{}'.format(*T)
+                                       for T in obj.polygon])
+                    poly_elem = ET.Element("polygon",
+                                           attrib={"points": points})
+                    object_elem.append(poly_elem)
+                elif obj.polyline is not None:
+                    points = ' '.join(['{},{}'.format(*T)
+                                       for T in obj.polyline])
+                    poly_elem = ET.Element("polyline",
+                                           attrib={"points": points})
+                    object_elem.append(poly_elem)
+
+                elem.append(object_elem)
+
+            return elem
+
+        def get_imagelayer_elem(layer, fd=fd, data_encoding=data_encoding,
+                                data_compression=data_compression):
+            attr = {"name": layer.name, "offsetx": layer.offsetx,
+                    "offsety": layer.offsety, "x": layer.offsetx,
+                    "y": layer.offsety}
+            if layer.opacity != 1:
+                attr["opacity"] = layer.opacity
+            if not layer.visible:
+                attr["visible"] = "0"
+            elem = ET.Element("imagelayer", attrib=clean_attr(attr))
+
+            if layer.properties:
+                elem.append(get_properties_elem(layer.properties))
+
+            if layer.image:
+                elem.append(get_image_elem(layer.image))
+
+            return elem
+
+        def get_grouplayer_elem(layer, fd=fd, data_encoding=data_encoding,
+                                data_compression=data_compression):
+            attr = {"name": layer.name, "offsetx": layer.offsetx,
+                    "offsety": layer.offsety}
+            if layer.opacity != 1:
+                attr["opacity"] = layer.opacity
+            if not layer.visible:
+                attr["visible"] = "0"
+            elem = ET.Element("group", attrib=clean_attr(attr))
+
+            if layer.properties:
+                elem.append(get_properties_elem(layer.properties))
+
+            for sublayer in layer.layers:
+                if isinstance(sublayer, Layer):
+                    elem.append(get_layer_elem(sublayer))
+                elif isinstance(sublayer, ObjectGroup):
+                    elem.append(get_objectgroup_elem(sublayer))
+                elif isinstance(sublayer, ImageLayer):
+                    elem.append(get_imagelayer_elem(sublayer))
+                elif isinstance(sublayer, GroupLayer):
+                    elem.append(get_grouplayer_elem(sublayer))
+                else:
+                    e = "{} is not a supported layer type.".format(
+                        sublayer.__class__.__name__)
+                    raise ValueError(e)
+
+            return elem
+
         if self.properties:
             root.append(get_properties_elem(self.properties))
 
@@ -598,95 +755,13 @@ class TileMap(object):
 
         for layer in self.layers:
             if isinstance(layer, Layer):
-                attr = {"name": layer.name}
-                if layer.opacity != 1:
-                    attr["opacity"] = layer.opacity
-                if not layer.visible:
-                    attr["visible"] = "0"
-                if layer.offsetx:
-                    attr["offsetx"] = layer.offsetx
-                if layer.offsety:
-                    attr["offsety"] = layer.offsety
-                elem = ET.Element("layer", attrib=clean_attr(attr))
-
-                if layer.properties:
-                    elem.append(get_properties_elem(layer.properties))
-
-                tile_n = [int(i) for i in layer.tiles]
-                attr = {"encoding": data_encoding,
-                        "compression": "zlib" if data_compression else None}
-                data_elem = ET.Element("data", attrib=clean_attr(attr))
-                data_elem.text = data_encode(tile_n, data_encoding,
-                                             data_compression)
-                elem.append(data_elem)
-
-                root.append(elem)
+                root.append(get_layer_elem(layer))
             elif isinstance(layer, ObjectGroup):
-                c = str(objectgroup.color) if objectgroup.color else None
-                attr = {"name": objectgroup.name, "color": c}
-                if objectgroup.opacity != 1:
-                    attr["opacity"] = objectgroup.opacity
-                if not objectgroup.visible:
-                    attr["visible"] = "0"
-                if layer.offsetx:
-                    attr["offsetx"] = layer.offsetx
-                if layer.offsety:
-                    attr["offsety"] = layer.offsety
-                if layer.draworder:
-                    attr["draworder"] = layer.draworder
-                elem = ET.Element("objectgroup", attrib=clean_attr(attr))
-
-                if objectgroup.properties:
-                    elem.append(get_properties_elem(objectgroup.properties))
-
-                for obj in objectgroup.objects:
-                    attr = {"id": obj.id, "name": obj.name, "type": obj.type,
-                            "x": obj.x, "y": obj.y, "gid": obj.gid}
-                    if obj.width:
-                        attr["width"] = obj.width
-                    if obj.height:
-                        attr["height"] = obj.height
-                    if obj.rotation:
-                        attr["rotation"] = obj.rotation
-                    if not obj.visible:
-                        attr["visible"] = "0"
-                    object_elem = ET.Element("object", attrib=clean_attr(attr))
-
-                    if obj.ellipse:
-                        object_elem.append(ET.Element("ellipse"))
-                    elif obj.polygon is not None:
-                        points = ' '.join(['{},{}'.format(*T)
-                                           for T in obj.polygon])
-                        poly_elem = ET.Element("polygon",
-                                               attrib={"points": points})
-                        object_elem.append(poly_elem)
-                    elif obj.polyline is not None:
-                        points = ' '.join(['{},{}'.format(*T)
-                                           for T in obj.polyline])
-                        poly_elem = ET.Element("polyline",
-                                               attrib={"points": points})
-                        object_elem.append(poly_elem)
-
-                    elem.append(object_elem)
-
-                root.append(elem)
+                root.append(get_objectgroup_elem(layer))
             elif isinstance(layer, ImageLayer):
-                attr = {"name": imagelayer.name, "offsetx": imagelayer.offsetx,
-                        "offsety": imagelayer.offsety, "x": imagelayer.offsetx,
-                        "y": imagelayer.offsety}
-                if imagelayer.opacity != 1:
-                    attr["opacity"] = imagelayer.opacity
-                if not imagelayer.visible:
-                    attr["visible"] = "0"
-                elem = ET.Element("imagelayer", attrib=clean_attr(attr))
-
-                if imagelayer.properties:
-                    elem.append(get_properties_elem(imagelayer.properties))
-
-                if imagelayer.image:
-                    elem.append(get_image_elem(imagelayer.image))
-
-                root.append(elem)
+                root.append(get_imagelayer_elem(layer))
+            elif isinstance(layer, GroupLayer):
+                root.append(get_grouplayer_elem(layer))
             else:
                 e = "{} is not a supported layer type.".format(
                     layer.__class__.__name__)
@@ -1127,9 +1202,57 @@ class ObjectGroup(object):
         self.visible = visible
         self.offsetx = offsetx
         self.offsety = offsety
-        self.draworder = None
+        self.draworder = draworder
         self.properties = properties if properties else []
         self.objects = objects if objects else []
+
+
+class GroupLayer(object):
+
+    """
+    .. attribute:: name
+
+       The name of the group layer.
+
+    .. attribute:: offsetx
+
+       Rendering offset for the group layer in pixels.
+
+    .. attribute:: offsety
+
+       Rendering offset for the group layer in pixels.
+
+    .. attribute:: opacity
+
+       The opacity of the group layer as a value from 0 to 1.
+
+    .. attribute:: visible
+
+       Whether or not the group layer is visible.
+
+    .. attribute:: properties
+
+       A list of :class:`Property` objects indicating the group layer's
+       properties.
+
+    .. attribute:: layers
+
+       A list of :class:`Layer`, :class:`ObjectGroup`,
+       :class:`GroupLayer`, and :class:`ImageLayer` objects indicating
+       the map's tile layers, object groups, group layers, and image
+       layers, respectively.  Those that appear in this list first are
+       rendered first (i.e. furthest in the back).
+    """
+
+    def __init__(self, name, offsetx=0, offsety=0, opacity=1, visible=True,
+                 properties=None, layers=None):
+        self.name = name
+        self.offsetx = offsetx
+        self.offsety = offsety
+        self.opacity = opacity
+        self.visible = visible
+        self.properties = properties if properties else []
+        self.layers = layers if layers else []
 
 
 class Property(object):
