@@ -135,7 +135,29 @@ class TileMap(object):
        the map's tile layers, object groups, group layers, and image
        layers, respectively.  Those that appear in this list first are
        rendered first (i.e. furthest in the back).
+
+    .. attribute:: layers_list
+
+       :attr:`layers`, but with all :class:`GroupLayer` objects
+       replaced recursively with their respective layer lists.  Use this
+       to ignore the layer hierarchy and treat it as a simple list of
+       layers instead.
+
+       (Read-only)
     """
+
+    @property
+    def layers_list(self):
+        def expand_layers(layers):
+            new_layers = []
+            for layer in layers:
+                if isinstance(layer, GroupLayer):
+                    new_layers.extend(expand_layers(layer.layers))
+                else:
+                    new_layers.append(layer)
+            return new_layers
+
+        return expand_layers(self.layers)
 
     def __init__(self):
         self.version = "1.0"

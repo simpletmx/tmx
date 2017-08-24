@@ -35,6 +35,8 @@ Other Classes
 
 .. autoclass:: tmx.ObjectGroup
 
+.. autoclass:: tmx.GroupLayer
+
 .. autoclass:: tmx.Property
 
 .. autoclass:: tmx.TerrainType
