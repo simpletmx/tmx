@@ -25,6 +25,8 @@ Other Classes
 
 .. autoclass:: tmx.Image
 
+.. autoclass:: tmx.Text
+
 .. autoclass:: tmx.ImageLayer
 
 .. autoclass:: tmx.Layer

@@ -51,9 +51,10 @@ import pathlib
 import six
 
 
-__all__ = ["TileMap", "Color", "Image", "ImageLayer", "Layer", "LayerTile",
-           "Object", "ObjectGroup", "Property", "TerrainType", "Tile",
-           "Tileset", "Frame", "data_decode", "data_encode"]
+__all__ = ["TileMap", "Color", "Image", "Text", "ImageLayer", "Layer",
+           "LayerTile", "Object", "ObjectGroup", "GroupLayer", "Property",
+           "TerrainType", "Tile", "Tileset", "Frame", "data_decode",
+           "data_encode"]
 
 
 class TileMap(object):
@@ -948,6 +949,78 @@ class Image(object):
         self.data = data
 
 
+class Text(object):
+
+    """
+    .. attribute:: text
+
+       The text displayed.
+
+    .. attribute:: fontfamily
+
+       The font family used.
+
+    .. attribute:: pixelsize
+
+       The size of the font in pixels.
+
+    .. attribute:: wrap
+
+       Whether or not word wrapping is enabled.
+
+    .. attribute:: color
+
+       A :class:`Color` object indicating the color of the text.
+
+    .. attribute:: bold
+
+       Whether or not the font is bold.
+
+    .. attribute:: italic
+
+       Whether or not the font is italic.
+
+    .. attribute:: underline
+
+       Whether or not a line should be drawn below the text.
+
+    .. attribute:: strikeout
+
+       Whether or not a line should be drawn through the text.
+
+    .. attribute:: kerning
+
+       Whether or not kerning should be used.
+
+    .. attribute:: halign
+
+       Horizontal alignment of the text within the object (``"left"``,
+       ``"center"``, or ``"right"``).
+
+    .. attribute:: valign
+
+       Vertical alignment of the text within the object (``"top"``,
+       ``"center"``, or ``"bottom"``).
+    """
+
+    def __init__(self, text="", fontfamily="sans-serif", pixelsize=16,
+                 wrap=False, color=Color("#0000000"), bold=False, italic=False,
+                 underline=False, strikeout=False, kerning=True, halign="left",
+                 valign="top"):
+        self.text = text
+        self.fontfamily = fontfamily
+        self.pixelsize = pixelsize
+        self.wrap = wrap
+        self.color = color
+        self.bold = bold
+        self.italic = italic
+        self.underline = underline
+        self.strikeout = strikeout
+        self.kerning = kerning
+        self.halign = halign
+        self.valign = valign
+
+
 class ImageLayer(object):
 
     """
@@ -1150,11 +1223,16 @@ class Object(object):
        position indicating the points of the object's representation as
        a polyline.  Set to :const:`None` to not represent the object as
        a polyline.
+
+    .. attribute:: text
+
+       A :class:`Text` object indicating the object's representation as
+       text.  Set to :const:`None` to not represent the object as text.
     """
 
     def __init__(self, name, type_, x, y, width=0, height=0, rotation=0,
                  gid=None, visible=True, properties=None, ellipse=False,
-                 polygon=None, polyline=None, id_=None):
+                 polygon=None, polyline=None, id_=None, text=None):
         self.name = name
         self.type = type_
         self.x = x
@@ -1169,6 +1247,7 @@ class Object(object):
         self.ellipse = ellipse
         self.polygon = polygon
         self.polyline = polyline
+        self.text = text
 
 
 class ObjectGroup(object):
