@@ -465,6 +465,7 @@ class TileMap(object):
                         tid = tchild.attrib.get("id")
                         if tid is not None:
                             tid = int(tid)
+                        ttype = tchild.attrib.get("type")
                         titerrain = tchild.attrib.get("terrain")
                         tiprobability = tchild.attrib.get("probability")
                         tiproperties = []
@@ -478,7 +479,8 @@ class TileMap(object):
                             elif tichild.tag == "animation":
                                 tianimation = get_animation(tichild)
                         tiles.append(Tile(tid, titerrain, tiprobability,
-                                          tiproperties, timage, tianimation))
+                                          tiproperties, timage, tianimation,
+                                          ttype))
 
                 self.tilesets.append(Tileset(firstgid, name, tilewidth,
                                              tileheight, source, spacing,
@@ -764,6 +766,8 @@ class TileMap(object):
             for tile in tileset.tiles:
                 attr = {"id": tile.id, "terrain": tile.terrain,
                         "probability": tile.probability}
+                if tile.type:
+                    attr["type"] = tile.type
                 tile_elem = ET.Element("tile", attrib=clean_attr(attr))
 
                 if tile.properties:
@@ -1416,6 +1420,11 @@ class Tile(object):
 
        The local tile ID within its tileset.
 
+    .. attribute:: type
+
+       The type of the tile.  An arbitrary string.  Set to :const:`None`
+       to not define a type.
+
     .. attribute:: terrain
 
        Defines the terrain type of each corner of the tile, given as
@@ -1447,8 +1456,9 @@ class Tile(object):
     """
 
     def __init__(self, id_, terrain=None, probability=None, properties=None,
-                 image=None, animation=None):
+                 image=None, animation=None, type_=None):
         self.id = id_
+        self.type = type_
         self.terrain = terrain
         self.probability = probability
         self.properties = properties if properties else []
