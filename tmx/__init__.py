@@ -331,6 +331,7 @@ class TileMap(object):
                     oellipse = False
                     opolygon = None
                     opolyline = None
+                    otext = None
 
                     for ochild in ogchild:
                         if ochild.tag == "properties":
@@ -359,11 +360,30 @@ class TileMap(object):
                                     else:
                                         pos.append(float(n))
                                 opolyline.append(tuple(pos))
+                        elif ochild.tag == "text":
+                            ttext = ochild.text
+                            tfontfamily = ochild.attrib.get("fontfamily")
+                            tpixelsize = int(ochild.attrib.get("pixelsize"))
+                            twrap = bool(int(ochild.attrib.get("wrap")))
+                            tcolor = ochild.attrib.get("color")
+                            if tcolor:
+                                tcolor = Color(tcolor)
+                            tbold = bool(int(ochild.attrib.get("bold")))
+                            titalic = bool(int(ochild.attrib.get("italic")))
+                            tunderline = bool(int(ochild.attrib.get("underline")))
+                            tstrikeout = bool(int(ochild.attrib.get("strikeout")))
+                            tkerning = bool(int(ochild.attrib.get("kerning")))
+                            thalign = ochild.attrib.get("halign")
+                            tvalign = ochild.attrib.get("valign")
+                            otext = Text(ttext, tfontfamily, tpixelsize,
+                                         twrap, tcolor, tbold, titalic,
+                                         tunderline, tstrikeout, tkerning,
+                                         thalign, tvalign)
 
                     objects.append(Object(oname, otype, ox, oy, owidth,
                                           oheight, orotation, ogid,
                                           ovisible, oproperties, oellipse,
-                                          opolygon, opolyline, oid))
+                                          opolygon, opolyline, oid, otext))
 
             return ObjectGroup(name, color, opacity, visible, offsetx, offsety,
                                draworder, properties, objects)
@@ -660,6 +680,27 @@ class TileMap(object):
                     poly_elem = ET.Element("polyline",
                                            attrib={"points": points})
                     object_elem.append(poly_elem)
+                elif obj.text:
+                    c = str(obj.text.color) if obj.text.color else None
+                    tattr = {"fontfamily": obj.text.fontfamily,
+                             "pixelsize": obj.text.pixelsize, "color": c,
+                             "halign": obj.text.halign,
+                             "valign": obj.text.valign}
+                    if obj.text.wrap:
+                        tattr["wrap"] = "1"
+                    if obj.text.bold:
+                        tattr["bold"] = "1"
+                    if obj.text.italic:
+                        tattr["italic"] = "1"
+                    if obj.text.underline:
+                        tattr["underline"] = "1"
+                    if obj.text.strikeout:
+                        tattr["strikeout"] = "1"
+                    if not obj.text.kerning:
+                        tattr["kerning"] = "0"
+                    text_elem = ET.Element("text", attrib=clean_attr(tattr))
+                    text_elem.text = obj.text.text
+                    object_elem.append(text_elem)
 
                 elem.append(object_elem)
 
