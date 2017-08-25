@@ -1049,7 +1049,7 @@ class Text(object):
     """
 
     def __init__(self, text="", fontfamily="sans-serif", pixelsize=16,
-                 wrap=False, color=Color("#0000000"), bold=False, italic=False,
+                 wrap=False, color=Color("#000000"), bold=False, italic=False,
                  underline=False, strikeout=False, kerning=True, halign="left",
                  valign="top"):
         self.text = text
