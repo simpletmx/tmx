@@ -28,7 +28,7 @@ At the request of the developer of Tiled, this documentation does not
 explain in detail what each attribute means. For that, please see the
 TMX format specification, found here:
 
-http://doc.mapeditor.org/reference/tmx-map-format/
+http://doc.mapeditor.org/en/latest/reference/tmx-map-format/
 """
 
 from __future__ import division

@@ -47,6 +47,8 @@ Other Classes
 
 .. autoclass:: tmx.Tileset
 
+.. autoclass:: tmx.Frame
+
 Functions
 =========
 
