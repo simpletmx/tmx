@@ -1,5 +1,4 @@
 # setup.py
-# Copyright (c) 2012-2016 Julie Marchant <onpon4@riseup.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,17 +23,16 @@ your game's levels.
 """.strip()
 
 setup(name="tmx",
-      version="1.10",
+      version="1.11",
       description="Simple TMX library.",
       long_description=long_description,
-      author="Julie Marchant",
-      author_email="onpon4@riseup.net",
-      url="http://python-tmx.nongnu.org",
+      author="Layla Marchant",
+      author_email="diligentcircle@riseup.net",
+      url="https://simpletmx.github.io",
       classifiers=["Development Status :: 5 - Production/Stable",
                    "License :: DFSG approved",
                    "License :: OSI Approved :: Apache Software License",
                    "Operating System :: OS Independent",
-                   "Programming Language :: Python :: 2",
                    "Programming Language :: Python :: 3",
                    "Topic :: Games/Entertainment",
                    "Topic :: Software Development"],
@@ -42,5 +40,4 @@ setup(name="tmx",
       packages=["tmx"],
       package_dir={"tmx": "tmx"},
       package_data={"tmx": ["COPYING"]},
-      requires=["six (>=1.4.0)"],
      )

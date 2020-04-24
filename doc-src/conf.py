@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Simple TMX Library'
-copyright = '2014-2016 Julie Marchant'
+copyright = '2014-2020 Layla Marchant'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -193,7 +193,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'SimpleTMXLibrary.tex', 'Simple TMX Library Documentation',
-   'Julie Marchant', 'manual'),
+   'Layla Marchant', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -223,7 +223,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'simpletmxlibrary', 'Simple TMX Library Documentation',
-     ['Julie Marchant'], 1)
+     ['Layla Marchant'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -237,7 +237,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'SimpleTMXLibrary', 'Simple TMX Library Documentation',
-   'Julie Marchant', 'SimpleTMXLibrary', 'One line description of project.',
+   'Layla Marchant', 'SimpleTMXLibrary', 'One line description of project.',
    'Miscellaneous'),
 ]
 
