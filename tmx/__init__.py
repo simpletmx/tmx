@@ -36,7 +36,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-__version__ = "1.10a0"
+__version__ = "1.11a0"
 
 
 import os
@@ -46,8 +46,7 @@ import gzip
 import zlib
 import warnings
 import pathlib
-
-import six
+import io
 
 
 __all__ = ["TileMap", "Color", "Image", "Text", "ImageLayer", "Layer",
@@ -924,7 +923,7 @@ class Color(object):
 
         if len(value) == 6:
             r, g, b = [int(value[i:(i + 2)], 16)
-                       for i in six.moves.range(0, 6, 2)]
+                       for i in range(0, 6, 2)]
             self.red, self.green, self.blue = r, g, b
             self.alpha = 255
         elif len(value) == 8:
@@ -1642,7 +1641,7 @@ def data_decode(data, encoding, compression=None):
 
         if compression == "gzip":
             # data = gzip.decompress(data)
-            with gzip.GzipFile(fileobj=six.BytesIO(data)) as f:
+            with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
                 data = f.read()
         elif compression == "zlib":
             data = zlib.decompress(data)
@@ -1650,13 +1649,10 @@ def data_decode(data, encoding, compression=None):
             e = 'Compression type "{}" not supported.'.format(compression)
             raise ValueError(e)
 
-        if six.PY2:
-            ndata = [ord(c) for c in data]
-        else:
-            ndata = [i for i in data]
+        ndata = [i for i in data]
 
         data = []
-        for i in six.moves.range(0, len(ndata), 4):
+        for i in range(0, len(ndata), 4):
             n = (ndata[i]  + ndata[i + 1] * (2 ** 8) +
                  ndata[i + 2] * (2 ** 16) + ndata[i + 3] * (2 ** 24))
             data.append(n)
@@ -1690,10 +1686,7 @@ def data_encode(data, encoding, compression=True):
             n = [i % (2 ** 8), i // (2 ** 8), i // (2 ** 16), i // (2 ** 24)]
             ndata.extend(n)
 
-        if six.PY2:
-            data = b''.join([chr(i) for i in ndata])
-        else:
-            data = b''.join([bytes((i,)) for i in ndata])
+        data = b''.join([bytes((i,)) for i in ndata])
 
         if compression:
             data = zlib.compress(data)
