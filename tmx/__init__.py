@@ -338,7 +338,7 @@ class TileMap:
                         dflip = bool(n & 2 ** 29)
                         tiles.append(LayerTile(gid, hflip, vflip, dflip))
 
-                    for ckroot = child.findall("chunk"):
+                    for ckroot in child.findall("chunk"):
                         ckx = int(ckroot.attrib.get("x", 0))
                         cky = int(ckroot.attrib.get("y", 0))
                         ckwidth = int(ckroot.attrib.get("width", 0))
@@ -601,7 +601,7 @@ class TileMap:
                                         wctile = tichild.attrib.get("tile")
                                         wcprob = tichild.attrib.get("probability")
                                         wangcornercolors.append(WangColor(
-                                            wcname, wccolor, wctitle, wcprob)
+                                            wcname, wccolor, wctitle, wcprob))
                                     elif tichild.tag == "wangedgecolor":
                                         wcname = tichild.attrib.get("name")
                                         wccolor = tichild.attrib.get("color")
@@ -610,7 +610,7 @@ class TileMap:
                                         wctile = tichild.attrib.get("tile")
                                         wcprob = tichild.attrib.get("probability")
                                         wangedgecolors.append(WangColor(
-                                            wcname, wccolor, wctitle, wcprob)
+                                            wcname, wccolor, wctitle, wcprob))
                                     elif tichild.tag == "wangtile":
                                         wttileid = tichild.attrib.get("tileid")
                                         wtwangid = tichild.attrib.get("wangid")
