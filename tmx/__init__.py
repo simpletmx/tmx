@@ -309,8 +309,18 @@ class TileMap:
             visible = bool(int(layer_root.attrib.get("visible", True)))
             offsetx = int(layer_root.attrib.get("offsetx", 0))
             offsety = int(layer_root.attrib.get("offsety", 0))
+            id_ = layer_root.attrib.get("id")
+            if id_ is not None:
+                id_ = int(id_)
+            width = layer_root.attrib.get("width")
+            if width is not None:
+                width = int(width)
+            height = layer_root.attrib.get("height")
+            if height is not None:
+                height = int(height)
             properties = []
             tiles = []
+            chunks = []
 
             for child in layer_root:
                 if child.tag == "properties":
@@ -333,6 +343,29 @@ class TileMap:
                         dflip = bool(n & 2 ** 29)
                         tiles.append(LayerTile(gid, hflip, vflip, dflip))
 
+                    for ckroot = child.findall("chunk"):
+                        ckx = int(ckroot.attrib.get("x", 0))
+                        cky = int(ckroot.attrib.get("y", 0))
+                        ckwidth = int(ckroot.attrib.get("width", 0))
+                        ckheight = int(ckroot.attrib.get("height", 0))
+                        cktiles = []
+                        if encoding:
+                            tile_n = data_decode(ckroot.text, encoding,
+                                                 compression)
+                        else:
+                            tile_n = [int(tile.attrib.get("gid", 0))
+                                      for tile in ckroot.findall("tile")]
+
+                        for n in tile_n:
+                            gid = (n - (n & 2 ** 31) - (n & 2 ** 30) -
+                                   (n & 2 ** 29))
+                            hflip = bool(n & 2 ** 31)
+                            vflip = bool(n & 2 ** 30)
+                            dflip = bool(n & 2 ** 29)
+                            cktiles.append(LayerTile(gid, hflip, vflip, dflip))
+
+                        chunks.append(LayerChunk(ckx, cky, ckwidth, ckheight))
+
             return Layer(name, opacity, visible, offsetx, offsety, properties,
                          tiles)
 
@@ -348,6 +381,7 @@ class TileMap:
             draworder = layer_root.attrib.get("draworder")
             properties = []
             objects = []
+            id_ = layer_root.attrib.get("id")
 
             for ogchild in layer_root:
                 if ogchild.tag == "properties":
@@ -425,7 +459,7 @@ class TileMap:
                                           opolygon, opolyline, oid, otext))
 
             return ObjectGroup(name, color, opacity, visible, offsetx, offsety,
-                               draworder, properties, objects)
+                               draworder, properties, objects, id_)
 
         def get_imagelayer(layer_root):
             name = layer_root.attrib.get("name", "")
@@ -555,37 +589,41 @@ class TileMap:
                         tiles.append(Tile(tid, titerrain, tiprobability,
                                           tiproperties, timage, tianimation,
                                           ttype))
-                    elif tchild.tag == "wangset":
-                        name = tchild.attrib.get("name")
-                        tile = tchild.attrib.get("tile")
-                        wangcornercolors = []
-                        wangedgecolors = []
-                        wangtiles = []
-                        for tichild in tchild:
-                            if tichild.tag == "wangcornercolor":
-                                wcname = tichild.attrib.get("name")
-                                wccolor = tichild.attrib.get("color")
-                                if wccolor:
-                                    wccolor = Color(wccolor)
-                                wctile = tichild.attrib.get("tile")
-                                wcprob = tichild.attrib.get("probability")
-                                wangcornercolors.append(WangColor(
-                                    wcname, wccolor, wctitle, wcprob)
-                            elif tichild.tag == "wangedgecolor":
-                                wcname = tichild.attrib.get("name")
-                                wccolor = tichild.attrib.get("color")
-                                if wccolor:
-                                    wccolor = Color(wccolor)
-                                wctile = tichild.attrib.get("tile")
-                                wcprob = tichild.attrib.get("probability")
-                                wangedgecolors.append(WangColor(
-                                    wcname, wccolor, wctitle, wcprob)
-                            elif tichild.tag == "wangtile":
-                                wttileid = tichild.attrib.get("tileid")
-                                wtwangid = tichild.attrib.get("wangid")
-                                wangtiles.append(WangTile(wttileid, wtwangid))
-                        wangsets.append(WangSet(name, tile, wangcornercolors,
-                                                wangedgecolors, wangtiles))
+                    elif tchild.tag == "wangsets":
+                        for wsroot in tchild:
+                            if wsroot.tag == "wangset":
+                                name = wsroot.attrib.get("name")
+                                tile = wsroot.attrib.get("tile")
+                                wangcornercolors = []
+                                wangedgecolors = []
+                                wangtiles = []
+                                for tichild in wsroot:
+                                    if tichild.tag == "wangcornercolor":
+                                        wcname = tichild.attrib.get("name")
+                                        wccolor = tichild.attrib.get("color")
+                                        if wccolor:
+                                            wccolor = Color(wccolor)
+                                        wctile = tichild.attrib.get("tile")
+                                        wcprob = tichild.attrib.get("probability")
+                                        wangcornercolors.append(WangColor(
+                                            wcname, wccolor, wctitle, wcprob)
+                                    elif tichild.tag == "wangedgecolor":
+                                        wcname = tichild.attrib.get("name")
+                                        wccolor = tichild.attrib.get("color")
+                                        if wccolor:
+                                            wccolor = Color(wccolor)
+                                        wctile = tichild.attrib.get("tile")
+                                        wcprob = tichild.attrib.get("probability")
+                                        wangedgecolors.append(WangColor(
+                                            wcname, wccolor, wctitle, wcprob)
+                                    elif tichild.tag == "wangtile":
+                                        wttileid = tichild.attrib.get("tileid")
+                                        wtwangid = tichild.attrib.get("wangid")
+                                        wangtiles.append(WangTile(
+                                            wttileid, wtwangid))
+                                wangsets.append(WangSet(
+                                    name, tile, wangcornercolors,
+                                    wangedgecolors, wangtiles))
                         
 
                 self.tilesets.append(Tileset(firstgid, name, tilewidth,
@@ -738,6 +776,16 @@ class TileMap:
             data_elem = ET.Element("data", attrib=clean_attr(attr))
             data_elem.text = data_encode(tile_n, data_encoding,
                                          data_compression)
+
+            for chunk in layer.chunks:
+                tile_n = [int(i) for i in chunk.tiles]
+                attr = {"x": chunk.x, "y": chunk.y, "width": chunk.width,
+                        "height": chunk.height}
+                chunk_elem = ET.Element("chunk", attrib=clean_attr(attr))
+                chunk_elem.text = data_encode(tile_n, data_encoding,
+                                              data_compression)
+                data_elem.append(chunk_elem)
+
             elem.append(data_elem)
 
             return elem
@@ -745,7 +793,7 @@ class TileMap:
         def get_objectgroup_elem(layer, fd=fd, data_encoding=data_encoding,
                                  data_compression=data_compression):
             c = str(layer.color) if layer.color else None
-            attr = {"name": layer.name, "color": c}
+            attr = {"id": layer.id, "name": layer.name, "color": c}
             if layer.opacity != 1:
                 attr["opacity"] = layer.opacity
             if not layer.visible:
@@ -890,6 +938,15 @@ class TileMap:
                 offset_elem = ET.Element("tileoffset", attrib=clean_attr(attr))
                 elem.append(offset_elem)
 
+            if (tileset.gridorientation is not None or
+                    tileset.gridwidth is not None or
+                    tileset.gridheight is not None):
+                attr = {"orienttation": tileset.gridorientation,
+                        "width": tileset.gridwidth,
+                        "height": tileset.gridheight}
+                grid_elem = ET.Element("grid", attrib=clean_attr(attr))
+                elem.append(grid_elem)
+
             if tileset.properties:
                 elem.append(get_properties_elem(tileset.properties))
 
@@ -929,6 +986,35 @@ class TileMap:
                     tile_elem.append(get_image_elem(tile.image))
 
                 elem.append(tile_elem)
+
+            wangsets_elem = ET.Element("wangsets")
+            for wangset in tileset.wangsets:
+                attr = {"name": wangset.name, "tile": wangset.tile}
+                wangset_elem = ET.element("wangset", attrib=clean_attr(attr))
+
+                for cc in wangset.wangcornercolors:
+                    attr = {"name": cc.name, "color": cc.color.hex_string,
+                            "tile": cc.tile, "probability": cc.probability}
+                    cc_elem = ET.element("wangcornercolor",
+                                         attrib=clean_attr(attr))
+                    wangset_elem.append(cc_elem)
+
+                for cc in wangset.wangedgecolors:
+                    attr = {"name": cc.name, "color": cc.color.hex_string,
+                            "tile": cc.tile, "probability": cc.probability}
+                    cc_elem = ET.element("wangedgecolor",
+                                         attrib=clean_attr(attr))
+                    wangset_elem.append(cc_elem)
+
+                for wangtile in wangset.wangtiles:
+                    attr = {"tileid": wangtile.tileid,
+                            "wangid": wangtile.wangid}
+                    wangtile_elem = ET.element("wangtile",
+                                               attrib=clean_attr(attr))
+                    wangset_elem.append(wangtile_elem)
+
+                wangsets_elem.append(wangset_elem)
+            elem.append(wangsets_elem)
 
             root.append(elem)
 
@@ -1249,7 +1335,7 @@ class ImageLayer:
         self.offsety = offsety
         self.opacity = opacity
         self.visible = visible
-        self.properties = properties if properties else []
+        self.properties = properties or []
         self.image = image
 
 
@@ -1289,17 +1375,39 @@ class Layer:
        The coordinates of each tile is determined by the tile's index
        within this list.  Exactly how the tiles are positioned is
        determined by the map orientation.
+
+    .. attribute:: id
+
+       Unique ID of the layer if set, or :const:`None` otherwise.
+
+    .. attribute:: width
+
+       The width of the layer in tiles, or :const:`None` if unspecified.
+
+    .. attribute:: height
+
+       The height of the layer in tiles, or :const:`None` if unspecified.
+
+    .. attribute:: chunks
+
+       A list of :class:`LayerChunk` objects indicating the chunks of
+       the layer.
     """
 
     def __init__(self, name, opacity=1, visible=True, offsetx=0, offsety=0,
-                 properties=None, tiles=None):
+                 properties=None, tiles=None, id_=None, width=None,
+                 height=None, chunks=None):
         self.name = name
         self.opacity = opacity
         self.visible = visible
         self.offsetx = offsetx
         self.offsety = offsety
-        self.properties = properties if properties else []
-        self.tiles = tiles if tiles else []
+        self.properties = properties or []
+        self.tiles = tiles or []
+        self.id = id_
+        self.width = width
+        self.height = height
+        self.chunks = chunks or []
 
 
 class LayerTile:
@@ -1339,6 +1447,39 @@ class LayerTile:
             r |= 2 ** 29
 
         return r
+
+
+class LayerChunk:
+
+    """
+    .. attribute:: x
+
+       The x coordinate of the chunk in tiles.
+
+    .. attribute:: y
+
+       The y coordinate of the chunk in tiles.
+
+    .. attribute:: width
+
+       The width of the chunk in tiles.
+
+    .. attribute:: height
+
+       The height of the chunk in tiles.
+
+    .. attribute:: tiles
+
+       A list of :class:`LayerTile` objects indicating the tiles of the
+       chunk.
+    """
+
+    def __init__(self, x, y, width, height, tiles=None):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.tiles = tiles or []
 
 
 class Object:
@@ -1431,7 +1572,7 @@ class Object:
         self.rotation = rotation
         self.gid = gid
         self.visible = visible
-        self.properties = properties if properties else []
+        self.properties = properties or []
         self.ellipse = ellipse
         self.polygon = polygon
         self.polyline = polyline
@@ -1477,14 +1618,19 @@ class ObjectGroup:
        A list of :class:`Property` objects indicating the object group's
        properties
 
-    .. attribute:: objects:
+    .. attribute:: objects
 
        A list of :class:`Object` objects indicating the object group's
        objects.
+
+    .. attribute:: id
+
+       Unique ID of the object group, or :const:`None` if unspecified.
     """
 
     def __init__(self, name, color=None, opacity=1, visible=True, offsetx=0,
-                 offsety=0, draworder=None, properties=None, objects=None):
+                 offsety=0, draworder=None, properties=None, objects=None,
+                 id_=None):
         self.name = name
         self.color = color
         self.opacity = opacity
@@ -1492,8 +1638,9 @@ class ObjectGroup:
         self.offsetx = offsetx
         self.offsety = offsety
         self.draworder = draworder
-        self.properties = properties if properties else []
-        self.objects = objects if objects else []
+        self.properties = properties or []
+        self.objects = objects or []
+        self.id = id_
 
 
 class GroupLayer:
@@ -1540,8 +1687,8 @@ class GroupLayer:
         self.offsety = offsety
         self.opacity = opacity
         self.visible = visible
-        self.properties = properties if properties else []
-        self.layers = layers if layers else []
+        self.properties = properties or []
+        self.layers = layers or []
 
 
 class Property:
@@ -1594,7 +1741,7 @@ class TerrainType:
     def __init__(self, name, tile, properties=None):
         self.name = name
         self.tile = tile
-        self.properties = properties if properties else []
+        self.properties = properties or []
 
 
 class Tile:
@@ -1645,7 +1792,7 @@ class Tile:
         self.type = type_
         self.terrain = terrain
         self.probability = probability
-        self.properties = properties if properties else []
+        self.properties = properties or []
         self.image = image
         self.animation = animation
 
@@ -1841,14 +1988,14 @@ class Tileset:
         self.yoffset = yoffset
         self.tilecount = tilecount
         self.columns = columns
-        self.properties = properties if properties else []
+        self.properties = properties or []
         self.image = image
-        self.terraintypes = terraintypes if terraintypes else []
-        self.tiles = tiles if tiles else []
+        self.terraintypes = terraintypes or []
+        self.tiles = tiles or []
         self.gridorientation = gridorientation
         self.gridwidth = gridwidth
         self.gridheight = gridheight
-        self.wangsets = wangsets if wangsets else []
+        self.wangsets = wangsets or []
 
 
 class Frame:
