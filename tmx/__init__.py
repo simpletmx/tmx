@@ -49,13 +49,13 @@ import pathlib
 import io
 
 
-__all__ = ["TileMap", "Color", "Image", "Text", "ImageLayer", "Layer",
-           "LayerTile", "Object", "ObjectGroup", "GroupLayer", "Property",
-           "TerrainType", "Tile", "Tileset", "Frame", "data_decode",
-           "data_encode"]
+__all__ = ["TileMap", "Color", "Image", "Text", "EditorSettings", "ImageLayer",
+           "Layer", "LayerTile", "Object", "ObjectGroup", "GroupLayer",
+           "Property", "TerrainType", "Tile", "Tileset", "Frame",
+           "data_decode", "data_encode"]
 
 
-class TileMap(object):
+class TileMap:
 
     """
     This class loads, stores, and saves TMX files.
@@ -63,6 +63,11 @@ class TileMap(object):
     .. attribute:: version
 
        The TMX format version.
+
+    .. attribute:: tiledversion
+
+       The tiled version used to save the file, or :const:`None` if
+       older than Tiled 1.0.1.
 
     .. attribute:: orientation
 
@@ -74,6 +79,11 @@ class TileMap(object):
        The order in which tiles are rendered.  Can be ``"right-down"``,
        ``"right-up"``, ``"left-down"``, or ``"left-up"``.  Default is
        ``"right-down"``.
+
+    .. attribute:: compressionlevel
+
+       The compression level to use for the tile layer, or
+       :const:`None` to use the algorithm default.
 
     .. attribute:: width
 
@@ -113,10 +123,20 @@ class TileMap(object):
        A :class:`Color` object indicating the background color of the
        map, or :const:`None` if no background color is defined.
 
+    .. atribute:: nextlayerid
+
+       The next available ID for new layers. Set to :const:`None` to not
+       set it.
+
     .. attribute:: nextobjectid
 
        The next available ID for new objects.  Set to :const:`None` to
        not set it.
+
+    .. attribute:: editorsettings
+
+       An :class:`EditorSettings` object indicating the map's
+       editor-specific settings.
 
     .. attribute:: properties
 
@@ -160,8 +180,10 @@ class TileMap(object):
 
     def __init__(self):
         self.version = "1.0"
+        self.tiledversion = None
         self.orientation = "orthogonal"
         self.renderorder = "right-down"
+        self.compressionlevel = None
         self.width = 0
         self.height = 0
         self.tilewidth = 32
@@ -170,7 +192,9 @@ class TileMap(object):
         self.staggerindex = None
         self.hexsidelength = None
         self.backgroundcolor = None
+        self.nextlayerid = None
         self.nextobjectid = None
+        self.editorsetttings = EditorSettings()
         self.properties = []
         self.tilesets = []
         self.layers = []
@@ -187,8 +211,11 @@ class TileMap(object):
         root = tree.getroot()
         fd = os.path.dirname(fname)
         self.version = root.attrib.get("version", self.version)
+        self.tiledversion = root.attrib.get("tiledversion", self.tiledversion)
         self.orientation = root.attrib.get("orientation", self.orientation)
         self.renderorder = root.attrib.get("renderorder", self.renderorder)
+        self.compressionlevel = root.attrib.get("compressionlevel",
+                                                self.compressionlevel)
         self.width = int(root.attrib.get("width", self.width))
         self.height = int(root.attrib.get("height", self.height))
         self.tilewidth = int(root.attrib.get("tilewidth", self.tilewidth))
@@ -202,9 +229,23 @@ class TileMap(object):
         self.backgroundcolor = root.attrib.get("backgroundcolor")
         if self.backgroundcolor:
             self.backgroundcolor = Color(self.backgroundcolor)
+        self.nextlayerid = root.attrib.get("nextlayerid", self.nextlayerid)
+        if self.nextlayerid is not None:
+            self.nextlayerid = int(self.nextlayerid)
         self.nextobjectid = root.attrib.get("nextobjectid", self.nextobjectid)
         if self.nextobjectid is not None:
             self.nextobjectid = int(self.nextobjectid)
+
+        def get_editorsettings(editorsettings_root, fd=fd):
+            es = EditorSettings()
+            for child in editorsettings_root:
+                if child.tag == "chunksize":
+                    es.chunkwidth = child.attrib.get("width", es.chunkwidth)
+                    es.chunkheight = child.attrib.get("height", es.chunkheight)
+                elif child.tag == "export":
+                    es.exporttarget = child.attrib.get("target", es.exporttarget)
+                    es.exportformat = child.attrib.get("format", es.exportformat)
+            return es
 
         def get_properties(properties_root, fd=fd):
             properties = []
@@ -427,7 +468,9 @@ class TileMap(object):
             return GroupLayer(name, x, y, opacity, visible, properties, layers)
 
         for child in root:
-            if child.tag == "properties":
+            if child.tag == "editorsettings":
+                self.editorsettings = get_editorsettings(child)
+            elif child.tag == "properties":
                 self.properties.extend(get_properties(child))
             elif child.tag == "tileset":
                 firstgid = int(child.attrib.get("firstgid"))
@@ -447,6 +490,9 @@ class TileMap(object):
                 spacing = int(troot.attrib.get("spacing", 0))
                 margin = int(troot.attrib.get("margin", 0))
                 tilecount = troot.attrib.get("tilecount")
+                gridorientation = None
+                gridwidth = None
+                gridheight = None
                 if tilecount is not None:
                     tilecount = int(tilecount)
                 columns = troot.attrib.get("columns")
@@ -459,11 +505,21 @@ class TileMap(object):
                 image = None
                 terraintypes = []
                 tiles = []
+                wangsets = []
 
                 for tchild in troot:
                     if tchild.tag == "tileoffset":
                         xoffset = int(tchild.attrib.get("x", xoffset))
                         yoffset = int(tchild.attrib.get("y", yoffset))
+                    elif tchild.tag == "grid":
+                        gridorientation = tchild.attrib.get(
+                            "orientation", gridorientation)
+                        gridwidth = tchild.attrib.get("width", gridwidth)
+                        if gridwidth is not None:
+                            gridwidth = int(gridwidth)
+                        gridheight = tchild.attrib.get("height", gridheight)
+                        if gridheight is not None:
+                            gridheight = int(gridheight)
                     elif tchild.tag == "properties":
                         properties.extend(get_properties(tchild))
                     elif tchild.tag == "image":
@@ -499,12 +555,46 @@ class TileMap(object):
                         tiles.append(Tile(tid, titerrain, tiprobability,
                                           tiproperties, timage, tianimation,
                                           ttype))
+                    elif tchild.tag == "wangset":
+                        name = tchild.attrib.get("name")
+                        tile = tchild.attrib.get("tile")
+                        wangcornercolors = []
+                        wangedgecolors = []
+                        wangtiles = []
+                        for tichild in tchild:
+                            if tichild.tag == "wangcornercolor":
+                                wcname = tichild.attrib.get("name")
+                                wccolor = tichild.attrib.get("color")
+                                if wccolor:
+                                    wccolor = Color(wccolor)
+                                wctile = tichild.attrib.get("tile")
+                                wcprob = tichild.attrib.get("probability")
+                                wangcornercolors.append(WangColor(
+                                    wcname, wccolor, wctitle, wcprob)
+                            elif tichild.tag == "wangedgecolor":
+                                wcname = tichild.attrib.get("name")
+                                wccolor = tichild.attrib.get("color")
+                                if wccolor:
+                                    wccolor = Color(wccolor)
+                                wctile = tichild.attrib.get("tile")
+                                wcprob = tichild.attrib.get("probability")
+                                wangedgecolors.append(WangColor(
+                                    wcname, wccolor, wctitle, wcprob)
+                            elif tichild.tag == "wangtile":
+                                wttileid = tichild.attrib.get("tileid")
+                                wtwangid = tichild.attrib.get("wangid")
+                                wangtiles.append(WangTile(wttileid, wtwangid))
+                        wangsets.append(WangSet(name, tile, wangcornercolors,
+                                                wangedgecolors, wangtiles))
+                        
 
                 self.tilesets.append(Tileset(firstgid, name, tilewidth,
                                              tileheight, source, spacing,
                                              margin, xoffset, yoffset,
                                              tilecount, columns, properties,
-                                             image, terraintypes, tiles))
+                                             image, terraintypes, tiles,
+                                             gridorientation, gridwidth,
+                                             gridheight))
             elif child.tag == "layer":
                 self.layers.append(get_layer(child))
             elif child.tag == "objectgroup":
@@ -540,15 +630,35 @@ class TileMap(object):
             return new_d
 
         bgc = str(self.backgroundcolor) if self.backgroundcolor else None
-        attr = {"version": self.version, "orientation": self.orientation,
-                "renderorder": self.renderorder, "width": self.width,
+        attr = {"version": self.version, "tiledversion": self.tiledversion,
+                "orientation": self.orientation,
+                "renderorder": self.renderorder,
+                "compressionlevel": self.compressionlevel, "width": self.width,
                 "height": self.height, "tilewidth": self.tilewidth,
                 "tileheight": self.tileheight, "staggeraxis": self.staggeraxis,
                 "staggerindex": self.staggerindex,
                 "hexsidelength": self.hexsidelength, "backgroundcolor": bgc,
+                "nextlayerid": self.nextlayerid,
                 "nextobjectid": self.nextobjectid}
         root = ET.Element("map", attrib=clean_attr(attr))
         fd = os.path.dirname(fname)
+
+        def get_editorsettings_elem(editorsettings, fd=fd):
+            elem = ET.Element("editorsettings")
+            cw = self.editorsettings.chunkwidth
+            ch = self.editorsettings.chunkheight
+            if cw is not None or ch is not None:
+                attr = {"width": cw, "height": ch}
+                elem.append(ET.Element("chunksize", attrib=clean_attr(attr)))
+
+            et = self.editorsettings.exporttarget
+            ef = self.editorsettings.exportformat
+            if et is not None or ef is not None:
+                attr = {"target": et, "format": ef}
+                elem.append(ET.Element("export", attrib=clean_attr(attr)))
+
+            return elem
+                
 
         def get_properties_elem(properties, fd=fd):
             elem = ET.Element("properties")
@@ -752,6 +862,9 @@ class TileMap(object):
 
             return elem
 
+        if self.editorsettings is not None:
+            root.append(get_editorsettings_elem(self.editorsettings))
+
         if self.properties:
             root.append(get_properties_elem(self.properties))
 
@@ -837,7 +950,7 @@ class TileMap(object):
         tree.write(fname, encoding="UTF-8", xml_declaration=True)
 
 
-class Color(object):
+class Color:
 
     """
     .. attribute:: red
@@ -945,7 +1058,7 @@ class Color(object):
         return str(self)[index]
 
 
-class Image(object):
+class Image:
 
     """
     .. attribute:: format
@@ -992,7 +1105,7 @@ class Image(object):
         self.data = data
 
 
-class Text(object):
+class Text:
 
     """
     .. attribute:: text
@@ -1064,7 +1177,39 @@ class Text(object):
         self.valign = valign
 
 
-class ImageLayer(object):
+class EditorSettings:
+
+    """
+    .. attribute:: chunkwidth
+
+       The width of chunks used for infinite maps, or :const:`None` to
+       not specify.
+
+    .. attribute:: chunkheight
+
+       The height of chunks used for infinite maps, or :const:`None` to
+       not specify.
+
+    .. attribute:: exporttarget
+
+       The last file this map was exported to, or :const:`None` to not
+       specify.
+
+    .. attribute:: exportformat
+
+       The short name of the last format this map was exported as, or
+       :const:`None` to not specify.
+    """
+
+    def __init__(self, chunkwidth=None, chunkheight=None, exporttarget=None,
+                 exportformat=None):
+        self.chunkwidth = chunkwidth
+        self.chunkheight = chunkheight
+        self.exporttarget = exporttarget
+        self.exportformat = exportformat
+
+
+class ImageLayer:
 
     """
     .. attribute:: name
@@ -1108,7 +1253,7 @@ class ImageLayer(object):
         self.image = image
 
 
-class Layer(object):
+class Layer:
 
     """
     .. attribute:: name
@@ -1157,7 +1302,7 @@ class Layer(object):
         self.tiles = tiles if tiles else []
 
 
-class LayerTile(object):
+class LayerTile:
     """
     .. attribute:: gid
 
@@ -1196,7 +1341,7 @@ class LayerTile(object):
         return r
 
 
-class Object(object):
+class Object:
 
     """
     .. attribute:: id
@@ -1293,7 +1438,7 @@ class Object(object):
         self.text = text
 
 
-class ObjectGroup(object):
+class ObjectGroup:
 
     """
     .. attribute:: name
@@ -1351,7 +1496,7 @@ class ObjectGroup(object):
         self.objects = objects if objects else []
 
 
-class GroupLayer(object):
+class GroupLayer:
 
     """
     .. attribute:: name
@@ -1399,7 +1544,7 @@ class GroupLayer(object):
         self.layers = layers if layers else []
 
 
-class Property(object):
+class Property:
 
     """
     .. attribute:: name
@@ -1428,7 +1573,7 @@ class Property(object):
         self.value = value
 
 
-class TerrainType(object):
+class TerrainType:
 
     """
     .. attribute:: name
@@ -1452,7 +1597,7 @@ class TerrainType(object):
         self.properties = properties if properties else []
 
 
-class Tile(object):
+class Tile:
 
     """
     .. attribute:: id
@@ -1505,7 +1650,88 @@ class Tile(object):
         self.animation = animation
 
 
-class Tileset(object):
+class WangColor:
+
+    """
+    .. attribute:: name
+
+       The name of this color.
+
+    .. attribute:: color
+
+       A :class:`Color` object representing the color.
+
+    .. attribute:: tile
+
+       The tile ID of the tile representing this color.
+
+    .. attribute:: probability
+
+       The relative probability that this color is chosen over others in
+       case of multiple options.
+    """
+
+    def __init__(self, name, color, tile, probability):
+        self.name = name
+        self.color = color
+        self.tile = tile
+        self.probability = probability
+
+
+class WangTile:
+
+    """
+    .. attribute:: tileid
+
+       The tile ID.
+
+    .. attribute:: wangid
+
+       The Wang ID.
+    """
+    
+    def __init__(self, tileid, wangid):
+        self.tileid = tileid
+        self.wangid = wangid
+
+
+class WangSet:
+
+    """
+    .. attribute:: name
+
+       The name of the Wang set.
+
+    .. attribute:: tile
+
+       The tile ID of the tile representing this Wang set.
+
+    .. attribute:: wangcornercolors
+
+       A list of :class:`WangColor` objects representing colors used to
+       define the corners of Wang tiles.
+
+    .. attribute:: wangedgecolors
+
+       A list of :class:`WangColor` objects representing colors used to
+       define the edges of Wang tiles.
+
+    .. attribute:: wangtiles
+
+       A list of :class:`WangTile` objects representing Wang tiles in
+       the Wang set.
+    """
+
+    def __init__(self, name, tile, wangcornercolors=None, wangedgecolors=None,
+                 wangtiles=None):
+        self.name = name
+        self.tile = tile
+        self.wangcornercolors = wangcornercolors if wangcornercolors else None
+        self.wangedgecolors = wangedgecolors if wangedgecolors else None
+        self.wangtiles = wangtiles if wangtiles else None
+
+
+class Tileset:
 
     """
     .. attribute:: firstgid
@@ -1559,6 +1785,20 @@ class Tileset(object):
        The number of tile columns in the tileset.  Set to :const:`None`
        to not specify this.
 
+    .. attribute:: gridorientation
+
+       Orientation of the grid for the tiles in this tileset
+       (``"orthogonal"`` or ``"isometric"``).  Set to :const:`None` to
+       not specify this.
+
+    .. attribute:: gridwidth
+
+       Width of a grid cell.  Set to :const:`None` to not specify this.
+
+    .. attribute:: gridheight
+
+       Height of a grid cell.  Set to :const:`None` to not specify this.
+
     .. attribute:: properties
 
        A list of :class:`Property` objects indicating the tileset's
@@ -1578,12 +1818,18 @@ class Tileset(object):
 
        A list of :class:`Tile` objects indicating the tileset's tile
        properties.
+
+    .. attribute:: wangsets
+
+       A list of :class:`Wangset` objects indicating the Wang sets
+       defined for the tileset.
     """
 
     def __init__(self, firstgid, name, tilewidth, tileheight, source=None,
                  spacing=0, margin=0, xoffset=0, yoffset=0, tilecount=None,
                  columns=None, properties=None, image=None, terraintypes=None,
-                 tiles=None):
+                 tiles=None, gridorientation=None, gridwidth=None,
+                 gridheight=None, wangsets=None):
         self.firstgid = firstgid
         self.name = name
         self.tilewidth = tilewidth
@@ -1599,9 +1845,13 @@ class Tileset(object):
         self.image = image
         self.terraintypes = terraintypes if terraintypes else []
         self.tiles = tiles if tiles else []
+        self.gridorientation = gridorientation
+        self.gridwidth = gridwidth
+        self.gridheight = gridheight
+        self.wangsets = wangsets if wangsets else []
 
 
-class Frame(object):
+class Frame:
 
     """
     .. attribute:: tileid
