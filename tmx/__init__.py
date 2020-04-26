@@ -43,11 +43,13 @@ import warnings
 import pathlib
 import io
 
+from . import local
+from .Tile import Tile
+
 
 __all__ = ["TileMap", "Color", "Image", "Text", "EditorSettings", "ImageLayer",
            "Layer", "LayerTile", "Object", "ObjectGroup", "GroupLayer",
-           "Property", "TerrainType", "Tile", "Tileset", "Frame",
-           "data_decode", "data_encode"]
+           "Property", "TerrainType", "Tile", "Tileset", "Frame"]
 
 
 class TileMap:
@@ -324,7 +326,7 @@ class TileMap:
                     encoding = child.attrib.get("encoding")
                     compression = child.attrib.get("compression")
                     if encoding:
-                        tile_n = data_decode(child.text, encoding,
+                        tile_n = local.data_decode(child.text, encoding,
                                              compression)
                     else:
                         tile_n = [int(tile.attrib.get("gid", 0))
@@ -345,7 +347,7 @@ class TileMap:
                         ckheight = int(ckroot.attrib.get("height", 0))
                         cktiles = []
                         if encoding:
-                            tile_n = data_decode(ckroot.text, encoding,
+                            tile_n = local.data_decode(ckroot.text, encoding,
                                                  compression)
                         else:
                             tile_n = [int(tile.attrib.get("gid", 0))
@@ -655,13 +657,6 @@ class TileMap:
         if data_encoding is None:
             data_encoding = "base64"
 
-        def clean_attr(d):
-            new_d = {}
-            for i in d:
-                if d[i] is not None:
-                    new_d[i] = str(d[i])
-            return new_d
-
         bgc = str(self.backgroundcolor) if self.backgroundcolor else None
         attr = {"version": self.version, "tiledversion": self.tiledversion,
                 "orientation": self.orientation,
@@ -673,7 +668,7 @@ class TileMap:
                 "hexsidelength": self.hexsidelength, "backgroundcolor": bgc,
                 "nextlayerid": self.nextlayerid,
                 "nextobjectid": self.nextobjectid}
-        root = ET.Element("map", attrib=clean_attr(attr))
+        root = ET.Element("map", attrib=local.clean_dict(attr))
         fd = os.path.dirname(fname)
 
         def get_editorsettings_elem(editorsettings, fd=fd):
@@ -682,13 +677,13 @@ class TileMap:
             ch = self.editorsettings.chunkheight
             if cw is not None or ch is not None:
                 attr = {"width": cw, "height": ch}
-                elem.append(ET.Element("chunksize", attrib=clean_attr(attr)))
+                elem.append(ET.Element("chunksize", attrib=local.clean_dict(attr)))
 
             et = self.editorsettings.exporttarget
             ef = self.editorsettings.exportformat
             if et is not None or ef is not None:
                 attr = {"target": et, "format": ef}
-                elem.append(ET.Element("export", attrib=clean_attr(attr)))
+                elem.append(ET.Element("export", attrib=local.clean_dict(attr)))
 
             return elem
                 
@@ -721,7 +716,7 @@ class TileMap:
                     prop_attr["type"] = type_
 
                 elem.append(ET.Element(
-                    "property", attrib=clean_attr(prop_attr), text=text))
+                    "property", attrib=local.clean_dict(prop_attr), text=text))
 
             return elem
 
@@ -731,7 +726,7 @@ class TileMap:
             if image_obj.source:
                 pth = pathlib.PurePath(os.path.relpath(image_obj.source, fd))
                 attr["source"] = pth.as_posix()
-            elem = ET.Element("image", attrib=clean_attr(attr))
+            elem = ET.Element("image", attrib=local.clean_dict(attr))
 
             if image_obj.data is not None:
                 data_elem = ET.Element("data")
@@ -745,7 +740,7 @@ class TileMap:
             for animation_obj in animation:
                 attr = {"tileid": animation_obj.tileid,
                         "duration": animation_obj.duration}
-                elem.append(ET.Element("frame", attrib=clean_attr(attr)))
+                elem.append(ET.Element("frame", attrib=local.clean_dict(attr)))
 
             return elem
 
@@ -760,7 +755,7 @@ class TileMap:
                 attr["offsetx"] = layer.offsetx
             if layer.offsety:
                 attr["offsety"] = layer.offsety
-            elem = ET.Element("layer", attrib=clean_attr(attr))
+            elem = ET.Element("layer", attrib=local.clean_dict(attr))
 
             if layer.properties:
                 elem.append(get_properties_elem(layer.properties))
@@ -768,16 +763,16 @@ class TileMap:
             tile_n = [int(i) for i in layer.tiles]
             attr = {"encoding": data_encoding,
                     "compression": "zlib" if data_compression else None}
-            data_elem = ET.Element("data", attrib=clean_attr(attr))
-            data_elem.text = data_encode(tile_n, data_encoding,
+            data_elem = ET.Element("data", attrib=local.clean_dict(attr))
+            data_elem.text = local.data_encode(tile_n, data_encoding,
                                          data_compression)
 
             for chunk in layer.chunks:
                 tile_n = [int(i) for i in chunk.tiles]
                 attr = {"x": chunk.x, "y": chunk.y, "width": chunk.width,
                         "height": chunk.height}
-                chunk_elem = ET.Element("chunk", attrib=clean_attr(attr))
-                chunk_elem.text = data_encode(tile_n, data_encoding,
+                chunk_elem = ET.Element("chunk", attrib=local.clean_dict(attr))
+                chunk_elem.text = local.data_encode(tile_n, data_encoding,
                                               data_compression)
                 data_elem.append(chunk_elem)
 
@@ -799,7 +794,7 @@ class TileMap:
                 attr["offsety"] = layer.offsety
             if layer.draworder:
                 attr["draworder"] = layer.draworder
-            elem = ET.Element("objectgroup", attrib=clean_attr(attr))
+            elem = ET.Element("objectgroup", attrib=local.clean_dict(attr))
 
             if layer.properties:
                 elem.append(get_properties_elem(layer.properties))
@@ -815,7 +810,7 @@ class TileMap:
                     attr["rotation"] = obj.rotation
                 if not obj.visible:
                     attr["visible"] = "0"
-                object_elem = ET.Element("object", attrib=clean_attr(attr))
+                object_elem = ET.Element("object", attrib=local.clean_dict(attr))
 
                 if obj.ellipse:
                     object_elem.append(ET.Element("ellipse"))
@@ -849,7 +844,7 @@ class TileMap:
                         tattr["strikeout"] = "1"
                     if not obj.text.kerning:
                         tattr["kerning"] = "0"
-                    text_elem = ET.Element("text", attrib=clean_attr(tattr))
+                    text_elem = ET.Element("text", attrib=local.clean_dict(tattr))
                     text_elem.text = obj.text.text
                     object_elem.append(text_elem)
 
@@ -866,7 +861,7 @@ class TileMap:
                 attr["opacity"] = layer.opacity
             if not layer.visible:
                 attr["visible"] = "0"
-            elem = ET.Element("imagelayer", attrib=clean_attr(attr))
+            elem = ET.Element("imagelayer", attrib=local.clean_dict(attr))
 
             if layer.properties:
                 elem.append(get_properties_elem(layer.properties))
@@ -884,7 +879,7 @@ class TileMap:
                 attr["opacity"] = layer.opacity
             if not layer.visible:
                 attr["visible"] = "0"
-            elem = ET.Element("group", attrib=clean_attr(attr))
+            elem = ET.Element("group", attrib=local.clean_dict(attr))
 
             if layer.properties:
                 elem.append(get_properties_elem(layer.properties))
@@ -926,11 +921,11 @@ class TileMap:
                 attr["tilecount"] = tileset.tilecount
             if tileset.columns:
                 attr["columns"] = tileset.columns
-            elem = ET.Element("tileset", attrib=clean_attr(attr))
+            elem = ET.Element("tileset", attrib=local.clean_dict(attr))
 
             if tileset.xoffset or tileset.yoffset:
                 attr = {"x": tileset.xoffset, "y": tileset.yoffset}
-                offset_elem = ET.Element("tileoffset", attrib=clean_attr(attr))
+                offset_elem = ET.Element("tileoffset", attrib=local.clean_dict(attr))
                 elem.append(offset_elem)
 
             if (tileset.gridorientation is not None or
@@ -939,7 +934,7 @@ class TileMap:
                 attr = {"orienttation": tileset.gridorientation,
                         "width": tileset.gridwidth,
                         "height": tileset.gridheight}
-                grid_elem = ET.Element("grid", attrib=clean_attr(attr))
+                grid_elem = ET.Element("grid", attrib=local.clean_dict(attr))
                 elem.append(grid_elem)
 
             if tileset.properties:
@@ -957,7 +952,7 @@ class TileMap:
                 for terrain in tileset.terraintypes:
                     attr = {"name": terrain.name, "tile": terrain.tile}
                     terrain_elem = ET.Element("terrain",
-                                              attrib=clean_attr(attr))
+                                              attrib=local.clean_dict(attr))
 
                     if terrain.properties:
                         prop_elem = get_properties_elem(terrain.properties)
@@ -972,7 +967,7 @@ class TileMap:
                         "probability": tile.probability}
                 if tile.type:
                     attr["type"] = tile.type
-                tile_elem = ET.Element("tile", attrib=clean_attr(attr))
+                tile_elem = ET.Element("tile", attrib=local.clean_dict(attr))
 
                 if tile.properties:
                     tile_elem.append(get_properties_elem(tile.properties))
@@ -985,27 +980,27 @@ class TileMap:
             wangsets_elem = ET.Element("wangsets")
             for wangset in tileset.wangsets:
                 attr = {"name": wangset.name, "tile": wangset.tile}
-                wangset_elem = ET.element("wangset", attrib=clean_attr(attr))
+                wangset_elem = ET.element("wangset", attrib=local.clean_dict(attr))
 
                 for cc in wangset.wangcornercolors:
                     attr = {"name": cc.name, "color": cc.color.hex_string,
                             "tile": cc.tile, "probability": cc.probability}
                     cc_elem = ET.element("wangcornercolor",
-                                         attrib=clean_attr(attr))
+                                         attrib=local.clean_dict(attr))
                     wangset_elem.append(cc_elem)
 
                 for cc in wangset.wangedgecolors:
                     attr = {"name": cc.name, "color": cc.color.hex_string,
                             "tile": cc.tile, "probability": cc.probability}
                     cc_elem = ET.element("wangedgecolor",
-                                         attrib=clean_attr(attr))
+                                         attrib=local.clean_dict(attr))
                     wangset_elem.append(cc_elem)
 
                 for wangtile in wangset.wangtiles:
                     attr = {"tileid": wangtile.tileid,
                             "wangid": wangtile.wangid}
                     wangtile_elem = ET.element("wangtile",
-                                               attrib=clean_attr(attr))
+                                               attrib=local.clean_dict(attr))
                     wangset_elem.append(wangtile_elem)
 
                 wangsets_elem.append(wangset_elem)
@@ -1739,59 +1734,6 @@ class TerrainType:
         self.properties = properties or []
 
 
-class Tile:
-
-    """
-    .. attribute:: id
-
-       The local tile ID within its tileset.
-
-    .. attribute:: type
-
-       The type of the tile.  An arbitrary string.  Set to :const:`None`
-       to not define a type.
-
-    .. attribute:: terrain
-
-       Defines the terrain type of each corner of the tile, given as
-       comma-separated indexes in the list of terrain types in the order
-       top-left, top-right, bottom-left, bottom-right.  Leaving out a
-       value means that corner has no terrain. Set to :const:`None` for
-       no terrain.
-
-    .. attribute:: probability
-
-       A percentage indicating the probability that this tile is chosen
-       when it competes with others while editing with the terrain tool.
-       Set to :const:`None` to not define this.
-
-    .. attribute:: properties
-
-       A list of :class:`Property` objects indicating the tile's
-       properties.
-
-    .. attribute:: image
-
-       An :class:`Image` object indicating the tile's image.  Set to
-       :const:`None` for no image.
-
-    .. attribute:: animation
-
-       A list of :class:`Frame` objects indicating this tile's animation.
-       Set to :const:`None` for no animation.
-    """
-
-    def __init__(self, id_, terrain=None, probability=None, properties=None,
-                 image=None, animation=None, type_=None):
-        self.id = id_
-        self.type = type_
-        self.terrain = terrain
-        self.probability = probability
-        self.properties = properties or []
-        self.image = image
-        self.animation = animation
-
-
 class WangColor:
 
     """
@@ -1871,219 +1813,3 @@ class WangSet:
         self.wangcornercolors = wangcornercolors if wangcornercolors else None
         self.wangedgecolors = wangedgecolors if wangedgecolors else None
         self.wangtiles = wangtiles if wangtiles else None
-
-
-class Tileset:
-
-    """
-    .. attribute:: firstgid
-
-       The first global tile ID of this tileset (this global ID maps to
-       the first tile in this tileset).
-
-    .. attribute:: name
-
-       The name of this tileset.
-
-    .. attribute:: tilewidth
-
-       The (maximum) width of the tiles in this tileset.
-
-    .. attribute:: tileheight
-
-       The (maximum) height of the tiles in this tileset.
-
-    .. attribute:: source
-
-       The external TSX (Tile Set XML) file to store this tileset in.
-       If set to :const:`None`, this tileset is stored in the TMX file.
-
-    .. attribute:: spacing
-
-       The spacing in pixels between the tiles in this tileset (applies
-       to the tileset image).
-
-    .. attribute:: margin
-
-       The margin around the tiles in this tileset (applies to the
-       tileset image).
-
-    .. attribute:: xoffset
-
-       The horizontal offset of the tileset in pixels (positive is
-       right).
-
-    .. attribute:: yoffset
-
-       The vertical offset of the tileset in pixels (positive is down).
-
-    .. attribute:: tilecount
-
-       The number of tiles in this tileset.  Set to :const:`None` to not
-       specify this.
-
-    .. attribute:: columns
-
-       The number of tile columns in the tileset.  Set to :const:`None`
-       to not specify this.
-
-    .. attribute:: gridorientation
-
-       Orientation of the grid for the tiles in this tileset
-       (``"orthogonal"`` or ``"isometric"``).  Set to :const:`None` to
-       not specify this.
-
-    .. attribute:: gridwidth
-
-       Width of a grid cell.  Set to :const:`None` to not specify this.
-
-    .. attribute:: gridheight
-
-       Height of a grid cell.  Set to :const:`None` to not specify this.
-
-    .. attribute:: properties
-
-       A list of :class:`Property` objects indicating the tileset's
-       properties.
-
-    .. attribute:: image
-
-       An :class:`Image` object indicating the tileset's image.  Set to
-       :const:`None` for no image.
-
-    .. attribute:: terraintypes
-
-       A list of :class:`TerrainType` objects indicating the tileset's
-       terrain types.
-
-    .. attribute:: tiles
-
-       A list of :class:`Tile` objects indicating the tileset's tile
-       properties.
-
-    .. attribute:: wangsets
-
-       A list of :class:`Wangset` objects indicating the Wang sets
-       defined for the tileset.
-    """
-
-    def __init__(self, firstgid, name, tilewidth, tileheight, source=None,
-                 spacing=0, margin=0, xoffset=0, yoffset=0, tilecount=None,
-                 columns=None, properties=None, image=None, terraintypes=None,
-                 tiles=None, gridorientation=None, gridwidth=None,
-                 gridheight=None, wangsets=None):
-        self.firstgid = firstgid
-        self.name = name
-        self.tilewidth = tilewidth
-        self.tileheight = tileheight
-        self.source = source
-        self.spacing = spacing
-        self.margin = margin
-        self.xoffset = xoffset
-        self.yoffset = yoffset
-        self.tilecount = tilecount
-        self.columns = columns
-        self.properties = properties or []
-        self.image = image
-        self.terraintypes = terraintypes or []
-        self.tiles = tiles or []
-        self.gridorientation = gridorientation
-        self.gridwidth = gridwidth
-        self.gridheight = gridheight
-        self.wangsets = wangsets or []
-
-
-class Frame:
-
-    """
-    .. attribute:: tileid
-
-       Global ID of the tile for this animation frame.
-
-    .. attribute:: duration
-
-       Time length of this frame in milliseconds.
-    """
-
-    def __init__(self, tid, duration):
-        self.tileid = tid
-        self.duration = duration
-
-
-def data_decode(data, encoding, compression=None):
-    """
-    Decode encoded data and return a list of integers it represents.
-
-    This is a low-level function used internally by this library; you
-    don't typically need to use it.
-
-    Arguments:
-
-    - ``data`` -- The data to decode.
-    - ``encoding`` -- The encoding of the data.  Can be ``"base64"`` or
-      ``"csv"``.
-    - ``compression`` -- The compression method used.  Valid compression
-      methods are ``"gzip"`` and ``"zlib"``.  Set to :const:`None` for
-      no compression.
-    """
-    if encoding == "csv":
-        return [int(i) for i in data.strip().split(",")]
-    elif encoding == "base64":
-        data = base64.b64decode(data.strip().encode("latin1"))
-
-        if compression == "gzip":
-            # data = gzip.decompress(data)
-            with gzip.GzipFile(fileobj=io.BytesIO(data)) as f:
-                data = f.read()
-        elif compression == "zlib":
-            data = zlib.decompress(data)
-        elif compression:
-            e = 'Compression type "{}" not supported.'.format(compression)
-            raise ValueError(e)
-
-        ndata = [i for i in data]
-
-        data = []
-        for i in range(0, len(ndata), 4):
-            n = (ndata[i]  + ndata[i + 1] * (2 ** 8) +
-                 ndata[i + 2] * (2 ** 16) + ndata[i + 3] * (2 ** 24))
-            data.append(n)
-
-        return data
-    else:
-        e = 'Encoding type "{}" not supported.'.format(encoding)
-        raise ValueError(e)
-
-
-def data_encode(data, encoding, compression=True):
-    """
-    Encode a list of integers and return the encoded data.
-
-    This is a low-level function used internally by this library; you
-    don't typically need to use it.
-
-    Arguments:
-
-    - ``data`` -- The list of integers to encode.
-    - ``encoding`` -- The encoding of the data.  Can be ``"base64"`` or
-      ``"csv"``.
-    - ``compression`` -- Whether or not compression should be used if
-      supported.
-    """
-    if encoding == "csv":
-        return ','.join([str(i) for i in data])
-    elif encoding == "base64":
-        ndata = []
-        for i in data:
-            n = [i % (2 ** 8), i // (2 ** 8), i // (2 ** 16), i // (2 ** 24)]
-            ndata.extend(n)
-
-        data = b''.join([bytes((i,)) for i in ndata])
-
-        if compression:
-            data = zlib.compress(data)
-
-        return base64.b64encode(data).decode("latin1")
-    else:
-        e = 'Encoding type "{}" not supported.'.format(encoding)
-        raise ValueError(e)
