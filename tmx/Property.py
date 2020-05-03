@@ -17,8 +17,8 @@ import os
 import pathlib
 import xml.etree.ElementTree as ET
 
-import local
-import Color
+from . import local
+from .Color import Color
 
 
 class Property:

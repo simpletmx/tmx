@@ -32,6 +32,10 @@ http://doc.mapeditor.org/en/latest/reference/tmx-map-format/
 
 
 __version__ = "1.13a0"
+__author__ = "Layla Marchant"
+__all__ = ["TileMap", "Color", "Image", "Text", "EditorSettings", "ImageLayer",
+           "Layer", "LayerTile", "Object", "ObjectGroup", "GroupLayer",
+           "Property", "TerrainType", "Tile", "Tileset", "Frame"]
 
 
 import os
@@ -45,11 +49,6 @@ import io
 
 from . import local
 from .Tile import Tile
-
-
-__all__ = ["TileMap", "Color", "Image", "Text", "EditorSettings", "ImageLayer",
-           "Layer", "LayerTile", "Object", "ObjectGroup", "GroupLayer",
-           "Property", "TerrainType", "Tile", "Tileset", "Frame"]
 
 
 class TileMap:
@@ -1294,189 +1293,3 @@ class Layer:
         self.height = height
         self.chunks = chunks or []
 
-
-class LayerTile:
-    """
-    .. attribute:: gid
-
-       The global ID of the tile.  A value of ``0`` indicates no tile at
-       this position.
-
-    .. attribute:: hflip
-
-       Whether or not the tile is flipped horizontally.
-
-    .. attribute:: vflip
-
-       Whether or not the tile is flipped vertically.
-
-    .. attribute:: dflip
-
-       Whether or not the tile is flipped diagonally (X and Y axis
-       swapped).
-    """
-
-    def __init__(self, gid, hflip=False, vflip=False, dflip=False):
-        self.gid = gid
-        self.hflip = hflip
-        self.vflip = vflip
-        self.dflip = dflip
-
-    def __int__(self):
-        r = self.gid
-        if self.hflip:
-            r |= 2 ** 31
-        if self.vflip:
-            r |= 2 ** 30
-        if self.dflip:
-            r |= 2 ** 29
-
-        return r
-
-
-class LayerChunk:
-
-    """
-    .. attribute:: x
-
-       The x coordinate of the chunk in tiles.
-
-    .. attribute:: y
-
-       The y coordinate of the chunk in tiles.
-
-    .. attribute:: width
-
-       The width of the chunk in tiles.
-
-    .. attribute:: height
-
-       The height of the chunk in tiles.
-
-    .. attribute:: tiles
-
-       A list of :class:`LayerTile` objects indicating the tiles of the
-       chunk.
-    """
-
-    def __init__(self, x, y, width, height, tiles=None):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.tiles = tiles or []
-
-
-
-
-
-class ObjectGroup:
-
-    """
-    .. attribute:: name
-
-       The name of the object group.
-
-    .. attribute:: color
-
-       A :class:`Color` object indicating the color used to display the
-       objects in this group.  Set to :const:`None` for no color
-       definition.
-
-    .. attribute:: opacity
-
-       The opacity of the object group as a value from 0 to 1.
-
-    .. attribute:: visible
-
-       Whether or not the object group is visible.
-
-    .. attribute:: offsetx
-
-       Rendering offset for this layer in pixels.
-
-    .. attribute:: offsety
-
-       Rendering offset for this layer in pixels.
-
-    .. attribute:: draworder
-
-       Can be "topdown" or "index".  Set to :const:`None` to not define
-       this.
-
-    .. attribute:: properties
-
-       A list of :class:`Property` objects indicating the object group's
-       properties
-
-    .. attribute:: objects
-
-       A list of :class:`Object` objects indicating the object group's
-       objects.
-
-    .. attribute:: id
-
-       Unique ID of the object group, or :const:`None` if unspecified.
-    """
-
-    def __init__(self, name, color=None, opacity=1, visible=True, offsetx=0,
-                 offsety=0, draworder=None, properties=None, objects=None,
-                 id_=None):
-        self.name = name
-        self.color = color
-        self.opacity = opacity
-        self.visible = visible
-        self.offsetx = offsetx
-        self.offsety = offsety
-        self.draworder = draworder
-        self.properties = properties or []
-        self.objects = objects or []
-        self.id = id_
-
-
-class GroupLayer:
-
-    """
-    .. attribute:: name
-
-       The name of the group layer.
-
-    .. attribute:: offsetx
-
-       Rendering offset for the group layer in pixels.
-
-    .. attribute:: offsety
-
-       Rendering offset for the group layer in pixels.
-
-    .. attribute:: opacity
-
-       The opacity of the group layer as a value from 0 to 1.
-
-    .. attribute:: visible
-
-       Whether or not the group layer is visible.
-
-    .. attribute:: properties
-
-       A list of :class:`Property` objects indicating the group layer's
-       properties.
-
-    .. attribute:: layers
-
-       A list of :class:`Layer`, :class:`ObjectGroup`,
-       :class:`GroupLayer`, and :class:`ImageLayer` objects indicating
-       the map's tile layers, object groups, group layers, and image
-       layers, respectively.  Those that appear in this list first are
-       rendered first (i.e. furthest in the back).
-    """
-
-    def __init__(self, name, offsetx=0, offsety=0, opacity=1, visible=True,
-                 properties=None, layers=None):
-        self.name = name
-        self.offsetx = offsetx
-        self.offsety = offsety
-        self.opacity = opacity
-        self.visible = visible
-        self.properties = properties or []
-        self.layers = layers or []

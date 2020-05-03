@@ -15,9 +15,9 @@
 
 import xml.etree.ElementTree as ET
 
-import local
-from WangColor import WangColor
-from WangTile import WangTile
+from . import local
+from .WangColor import WangColor
+from .WangTile import WangTile
 
 
 class WangSet:

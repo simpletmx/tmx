@@ -17,7 +17,7 @@ import pathlib
 import os
 import xml.etree.ElementTree as ET
 
-import local
+from . import local
 from .Image import Image
 from .Property import Property
 from .TerrainType import TerrainType

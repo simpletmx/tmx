@@ -15,8 +15,8 @@
 
 import xml.etree.ElementTree as ET
 
-import local
-from Color import Color
+from . import local
+from .Color import Color
 
 
 class WangColor:

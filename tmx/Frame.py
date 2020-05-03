@@ -15,7 +15,7 @@
 
 import xml.etree.ElementTree as ET
 
-import local
+from . import local
 
 
 class Frame:
@@ -42,16 +42,8 @@ class Frame:
         This is a low-level method used internally by this library; you
         don't typically need to use it.
         """
-        tileid = elem.attrib.get("tileid")
-        if tileid is not None:
-            tileid = int(tileid)
-        else:
-            tileid = 0
-        duration = elem.attrib.get("duration")
-        if duration is not None:
-            duration = int(duration)
-        else:
-            duration = 0
+        tileid = int(elem.attrib.get("tileid", 0))
+        duration = int(elem.attrib.get("duration", 0))
 
         return cls(tileid, duration)
 

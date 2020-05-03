@@ -15,7 +15,7 @@
 
 import xml.etree.ElementTree as ET
 
-import local
+from . import local
 
 
 class WangTile:

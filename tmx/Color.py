@@ -86,11 +86,11 @@ class Color:
         if self.alpha == 255:
             r, g, b = [hex(c)[2:].zfill(2) for c in (self.red, self.green,
                                                      self.blue)]
-            return "#{}{}{}".format(r, g, b)
+            return f"#{r}{g}{b}"
         else:
             r, g, b, a = [hex(c)[2:].zfill(2) for c in (self.red, self.green,
                                                         self.blue, self.alpha)]
-            return "#{}{}{}{}".format(a, r, g, b)
+            return f"#{a}{r}{g}{b}"
 
     @hex_string.setter
     def hex_string(self, value):
@@ -98,8 +98,7 @@ class Color:
             value = value[1:]
 
         if len(value) == 6:
-            r, g, b = [int(value[i:(i + 2)], 16)
-                       for i in range(0, 6, 2)]
+            r, g, b = [int(value[i:(i + 2)], 16) for i in range(0, 6, 2)]
             self.red, self.green, self.blue = r, g, b
             self.alpha = 255
         elif len(value) == 8:

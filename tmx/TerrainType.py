@@ -15,8 +15,8 @@
 
 import xml.etree.ElementTree as ET
 
-import local
-from Property import Property
+from . import local
+from .Property import Property
 
 
 class TerrainType:

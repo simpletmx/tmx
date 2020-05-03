@@ -15,9 +15,9 @@
 
 import xml.etree.ElementTree as ET
 
-import local
-from Property import Property
-from Text import Text
+from . import local
+from .Property import Property
+from .Text import Text
 
 
 class Object:
@@ -144,8 +144,8 @@ class Object:
 
         for child in elem:
             if child.tag == "properties":
-                properties.extend(read_list_elem(child, "property", Property,
-                                                 fd))
+                properties.extend(local.read_list_elem(child, "property",
+                                                       Property, fd))
             elif child.tag == "ellipse":
                 ellipse = True
             elif child.tag == "polygon":
@@ -186,10 +186,12 @@ class Object:
         attr = {"id": self.id, "name": self.name, "type": self.type,
                 "x": self.x, "y": self.y, "width": self.width,
                 "height": self.height, "rotation": self.rotation,
-                "gid": self.gid, "visible": self.visible}
+                "gid": self.gid}
+        if not self.visible:
+            attr["visible"] = 0
         elem = ET.Element("object", attrib=local.clean_dict(attr))
 
-        elem.append(get_list_elem(self.properties, "properties", fd))
+        elem.append(local.get_list_elem(self.properties, "properties", fd))
 
         if self.ellipse:
             elem.append(ET.Element("ellipse"))

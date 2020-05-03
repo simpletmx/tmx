@@ -15,8 +15,9 @@
 
 import xml.etree.ElementTree as ET
 
-import local
+from . import local
 from .Frame import Frame
+from .Image import Image
 from .Property import Property
 
 
