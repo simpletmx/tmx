@@ -118,3 +118,6 @@ class Color:
 
     def __getitem__(self, index):
         return str(self)[index]
+
+    def __eq__(self, other):
+        return str(self) == str(other)
