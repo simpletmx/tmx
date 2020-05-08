@@ -115,7 +115,7 @@ class ObjectGroup:
         return cls(name, color, opacity, visible, offsetx, offsety, draworder,
                    properties, objects, id_)
 
-    def get_elem(self, fd):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 
@@ -130,9 +130,10 @@ class ObjectGroup:
         elem = ET.Element("objectgroup", attrib=local.clean_dict(attr))
 
         if self.properties:
-            elem.append(local.get_list_elem(self.properties, "properties", fd))
+            elem.append(local.get_list_elem(self.properties, "properties", fd,
+                                            encoding, compression))
 
         for obj in self.objects:
-            elem.append(obj.get_elem(fd))
+            elem.append(obj.get_elem(fd, encoding, compression))
 
         return elem

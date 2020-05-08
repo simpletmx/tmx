@@ -55,7 +55,7 @@ class LayerChunk:
         self.tiles = tiles or []
 
     @classmethod
-    def read_elem(cls, elem, fd, encoding=None, compression=None):
+    def read_elem(cls, elem, fd, encoding, compression):
         """
         Read XML element ``elem`` and return an object of this class.
 
@@ -68,7 +68,7 @@ class LayerChunk:
         height = int(elem.attrib.get("height", 0))
         tiles = local.read_tiles(elem, encoding, compression)
 
-    def get_elem(self, fd, encoding=None, compression=None):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 

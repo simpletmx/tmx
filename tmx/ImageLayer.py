@@ -88,7 +88,7 @@ class ImageLayer:
 
         return cls(name, offsetx, offsety, opacity, visible, properties, image)
 
-    def get_elem(self, fd):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 
@@ -105,9 +105,10 @@ class ImageLayer:
         elem = ET.Element("imagelayer", attrib=local.clean_dict(attr))
 
         if self.properties:
-            elem.append(local.get_list_elem(self.properties, "properties", fd))
+            elem.append(local.get_list_elem(self.properties, "properties", fd,
+                                            encoding, compression))
 
         if self.image is not None:
-            elem.append(self.image.get_elem(fd))
+            elem.append(self.image.get_elem(fd, encoding, compression))
 
         return elem

@@ -100,7 +100,7 @@ class GroupLayer:
 
         return cls(name, offsetx, offsety, opacity, visible, properties, layers)
 
-    def get_elem(self, fd):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 
@@ -116,9 +116,10 @@ class GroupLayer:
         elem = ET.Element("group", attrib=local.clean_dict(attr))
 
         if self.properties:
-            elem.append(local.get_list_elem(self.properties, "properties", fd))
+            elem.append(local.get_list_elem(self.properties, "properties", fd,
+                                            encoding, compression))
 
         for layer in self.layers:
-            elem.append(layer.get_elem(fd))
+            elem.append(layer.get_elem(fd, encoding, compression))
 
         return elem

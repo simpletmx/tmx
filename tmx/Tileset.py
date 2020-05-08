@@ -213,35 +213,45 @@ class Tileset:
                    image, terraintypes, tiles, gridorientation, gridwidth,
                    gridheight, wangsets)
 
-    def get_elem(self, fd):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 
         This is a low-level method used internally by this library; you
         don't typically need to use it.
         """
-        def append_elems(root, fd, self=self):
+        def append_elems(root):
+            nonlocal self, fd
+
             if self.xoffset or self.yoffset:
                 attr = {"x": self.xoffset, "y": self.yoffset}
                 root.append(ET.Element(
                     "tileoffset", attrib=local.clean_dict(attr)))
+
             if (self.gridorientation is not None or
                     self.gridwidth is not None or self.gridheight is not None):
                 attr = {"orientation": self.gridorientation,
                         "width": self.gridwidth, "height": self.gridheight}
                 root.append(ET.Element("grid", attrib=local.clean_dict(attr)))
+
             if self.properties:
                 root.append(local.get_list_elem(self.properties, "properties",
-                                                fd))
+                                                fd, encoding, compression))
+
             if self.image is not None:
-                root.append(self.image.get_elem(fd))
+                root.append(self.image.get_elem(fd, encoding, compression))
+
             if self.terraintypes:
-                root.append(local.get_list_elem(self.terraintypes,
-                                                "terraintypes", fd))
+                root.append(local.get_list_elem(
+                    self.terraintypes, "terraintypes", fd, encoding,
+                    compression))
+
             if self.wangsets:
-                root.append(local.get_list_elem(self.wangsets, "wangsets", fd))
+                root.append(local.get_list_elem(self.wangsets, "wangsets", fd,
+                                                encoding, compression))
+
             for tile in self.tiles:
-                root.append(tile.get_elem(fd))
+                root.append(tile.get_elem(fd, encoding, compression))
 
         if self.source:
             pth = os.path.relpath(self.source, fd)
@@ -260,7 +270,7 @@ class Tileset:
                     "columns": self.columns or None}
             child = ET.Element("tileset", attrib=local.clean_dict(attr))
             elem.append(child)
-            append_elems(child, fd) 
+            append_elems(child) 
         else:
             attr = {"firstgid": self.firstgid, "name": self.name,
                     "tilewidth": self.tilewidth, "tileheight": self.tileheight,
@@ -268,6 +278,6 @@ class Tileset:
                     "margin": self.margin or None, "tilecount": self.tilecount,
                     "columns": self.columns or None}
             elem = ET.Element("tileset", attrib=local.clean_dict(attr))
-            append_elems(elem, fd)
+            append_elems(elem)
 
         return elem

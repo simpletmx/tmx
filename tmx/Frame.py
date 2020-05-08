@@ -47,7 +47,7 @@ class Frame:
 
         return cls(tileid, duration)
 
-    def get_elem(self, fd):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 

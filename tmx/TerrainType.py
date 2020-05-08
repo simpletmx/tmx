@@ -56,12 +56,12 @@ class TerrainType:
 
         for child in elem:
             if child.tag == "properties":
-                properties.extend(read_list_elem(child, "property", Property,
-                                                 fd))
+                properties.extend(local.read_list_elem(child, "property",
+                                                       Property, fd))
 
         return cls(name, tile, properties)
 
-    def get_elem(self, fd):
+    def get_elem(self, fd, encoding, compression):
         """
         Return an XML element for the object.
 
@@ -72,6 +72,7 @@ class TerrainType:
         elem = ET.Element("terrain", attrib=local.clean_dict(attr))
 
         if self.properties:
-            elem.append(get_list_elem(self.properties, "properties", fd))
+            elem.append(local.get_list_elem(self.properties, "properties", fd,
+                                            encoding, compression))
 
         return elem
