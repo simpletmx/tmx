@@ -53,7 +53,7 @@ class TileMap:
 
     .. attribute:: compressionlevel
 
-       The compression level to use for the tile layer, or
+       The compression level to use for the tile layer data, or
        :const:`None` to use the algorithm default.
 
     .. attribute:: width

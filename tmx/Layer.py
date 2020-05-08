@@ -132,7 +132,7 @@ class Layer:
         return cls(name, opacity, visible, offsetx, offsety, properties, tiles,
                    id_, width, height, chunks)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
@@ -160,9 +160,11 @@ class Layer:
             child = ET.Element("data", attrib=local.clean_dict(attr))
 
             if self.tiles:
-                local.write_tiles(self.tiles, child, encoding, compression)
+                local.write_tiles(self.tiles, child, encoding, compression,
+                                  compressionlevel)
 
             for chunk in self.chunks:
-                child.append(chunk.get_elem(fd, encoding, compression))
+                child.append(chunk.get_elem(fd, encoding, compression,
+                                            compressionlevel))
 
         return elem

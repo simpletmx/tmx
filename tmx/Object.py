@@ -176,7 +176,7 @@ class Object:
         return cls(name, type_, x, y, width, height, rotation, gid, visible,
                    properties, ellipse, polygon, polyline, id_, text)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
@@ -191,8 +191,9 @@ class Object:
             attr["visible"] = 0
         elem = ET.Element("object", attrib=local.clean_dict(attr))
 
-        elem.append(local.get_list_elem(self.properties, "properties", fd,
-                                        encoding, compression))
+        elem.append(local.get_list_elem(
+            self.properties, "properties", fd, encoding, compression,
+            compressionlevel))
 
         if self.ellipse:
             elem.append(ET.Element("ellipse"))
@@ -203,6 +204,7 @@ class Object:
             points = ' '.join(["{},{}".format(*T) for T in self.polyline])
             elem.append(ET.Element("polyline", attrib={"points": points}))
         elif self.text:
-            elem.append(self.text.get_elem(fd, encoding, compression))
+            elem.append(self.text.get_elem(fd, encoding, compression,
+                                           compressionlevel))
 
         return elem

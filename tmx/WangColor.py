@@ -61,7 +61,8 @@ class WangColor:
 
         return cls(name, color, tile, probability)
 
-    def get_elem(self, fd, encoding, compression, tag="wangcolor"):
+    def get_elem(self, fd, encoding, compression, compressionlevel,
+                 tag="wangcolor"):
         """
         Return an XML element for the object.
 

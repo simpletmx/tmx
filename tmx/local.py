@@ -69,7 +69,7 @@ def data_decode(data, encoding, compression=None):
         raise ValueError(e)
 
 
-def data_encode(data, encoding, compression=True):
+def data_encode(data, encoding, compression=True, compressionlevel=None):
     """
     Encode a list of integers and return the encoded data.
 
@@ -83,6 +83,8 @@ def data_encode(data, encoding, compression=True):
       ``"csv"``.
     - ``compression`` -- Whether or not compression should be used if
       supported.
+    - ``compressionlevel`` -- The compression level to use, or
+      :const:`None` to use the default.
     """
     if encoding == "csv":
         return ','.join([str(i) for i in data])
@@ -95,7 +97,9 @@ def data_encode(data, encoding, compression=True):
         data = b''.join([bytes((i,)) for i in ndata])
 
         if compression:
-            data = zlib.compress(data)
+            if compressionlevel is None:
+                compressionlevel = -1
+            data = zlib.compress(data, compressionlevel)
 
         return base64.b64encode(data).decode("latin1")
     else:
@@ -174,7 +178,7 @@ def read_tiles(elem, encoding, compression):
     return tiles
 
 
-def write_tiles(tiles, elem, encoding, compression):
+def write_tiles(tiles, elem, encoding, compression, compressionlevel):
     """
     Write the list of tiles in ``tiles`` to XML element ``elem``.
 
@@ -184,7 +188,8 @@ def write_tiles(tiles, elem, encoding, compression):
     tile_n = [int(i) for i in tiles]
 
     if encoding:
-        elem.text = data_encode(tile_n, encoding, compression)
+        elem.text = data_encode(tile_n, encoding, compression,
+                                compressionlevel)
     else:
         for n in tile_n:
             elem.append(ET.Element("tile", attrib={"gid": n}))

@@ -103,7 +103,7 @@ class Tile:
         return cls(id_, terrain, probability, properties, image, animation,
                    type_)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
@@ -117,14 +117,17 @@ class Tile:
         elem = ET.Element("tile", attrib=local.clean_dict(attr))
 
         if self.properties:
-            elem.append(local.get_list_elem(self.properties, "properties", fd,
-                                            encoding, compression))
+            elem.append(local.get_list_elem(
+                self.properties, "properties", fd, encoding, compression,
+                compressionlevel))
 
         if self.image:
-            elem.append(self.image.get_elem(fd, encoding, compression))
+            elem.append(self.image.get_elem(fd, encoding, compression,
+                                            compressionlevel))
 
         if self.animation:
-            elem.append(local.get_list_elem(self.animation, "animation", fd,
-                                            encoding, compression))
+            elem.append(local.get_list_elem(
+                self.animation, "animation", fd, encoding, compression,
+                compressionlevel))
 
         return elem

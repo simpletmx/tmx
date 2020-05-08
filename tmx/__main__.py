@@ -50,3 +50,6 @@ test(desc, tilemap, None, False)
 test(desc, tilemap, "csv", False)
 test(desc, tilemap, "base64", False)
 test(desc, tilemap, "base64", True)
+
+desc = ""
+tilemap.tiledversion = "1.2"

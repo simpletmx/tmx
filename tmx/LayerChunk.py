@@ -68,7 +68,7 @@ class LayerChunk:
         height = int(elem.attrib.get("height", 0))
         tiles = local.read_tiles(elem, encoding, compression)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
@@ -79,6 +79,7 @@ class LayerChunk:
                 "height": self.height}
         elem = ET.Element("chunk", attrib=local.clean_dict(attr))
 
-        local.write_tiles(self.tiles, elem, encoding, compression)
+        local.write_tiles(self.tiles, elem, encoding, compression,
+                          compressionlevel)
 
         return elem

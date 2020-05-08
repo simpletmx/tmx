@@ -89,7 +89,7 @@ class Image:
 
         return cls(format_, source, trans, width, height, data)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 

@@ -213,7 +213,7 @@ class Tileset:
                    image, terraintypes, tiles, gridorientation, gridwidth,
                    gridheight, wangsets)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
@@ -235,23 +235,27 @@ class Tileset:
                 root.append(ET.Element("grid", attrib=local.clean_dict(attr)))
 
             if self.properties:
-                root.append(local.get_list_elem(self.properties, "properties",
-                                                fd, encoding, compression))
+                root.append(local.get_list_elem(
+                    self.properties, "properties", fd, encoding, compression,
+                    compressionlevel))
 
             if self.image is not None:
-                root.append(self.image.get_elem(fd, encoding, compression))
+                root.append(self.image.get_elem(
+                    fd, encoding, compression, compressionlevel))
 
             if self.terraintypes:
                 root.append(local.get_list_elem(
                     self.terraintypes, "terraintypes", fd, encoding,
-                    compression))
+                    compression, compressionlevel))
 
             if self.wangsets:
-                root.append(local.get_list_elem(self.wangsets, "wangsets", fd,
-                                                encoding, compression))
+                root.append(local.get_list_elem(
+                    self.wangsets, "wangsets", fd, encoding, compression,
+                    compressionlevel))
 
             for tile in self.tiles:
-                root.append(tile.get_elem(fd, encoding, compression))
+                root.append(tile.get_elem(fd, encoding, compression,
+                                          compressionlevel))
 
         if self.source:
             pth = os.path.relpath(self.source, fd)

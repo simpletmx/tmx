@@ -79,7 +79,7 @@ class WangSet:
 
         return cls(name, tile, wangcornercolors, wangedgecolors, wangtiles)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
@@ -90,12 +90,16 @@ class WangSet:
         elem = ET.Element("wangset", attrib=local.clean_dict(attr))
 
         for wangcolor in self.wangcornercolors:
-            elem.append(wangcolor.get_elem(fd, "wangcornercolor"))
+            elem.append(wangcolor.get_elem(
+                fd, encoding, compression, compressionlevel,
+                "wangcornercolor"))
 
         for wangcolor in self.wangedgecolors:
-            elem.append(wangcolor.get_elem(fd, "wangedgecolor"))
+            elem.append(wangcolor.get_elem(
+                fd, encoding, compression, compressionlevel, "wangedgecolor"))
 
         for wangtile in self.wangtiles:
-            elem.append(wangtile.get_elem(fd))
+            elem.append(wangtile.get_elem(fd, encoding, compression,
+                                          compressionlevel))
 
         return elem

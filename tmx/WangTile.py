@@ -47,7 +47,7 @@ class WangTile:
 
         return cls(tileid, wangid)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 

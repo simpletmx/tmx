@@ -114,7 +114,7 @@ class Text:
         return cls(text, fontfamily, pixelsize, wrap, color, bold, italic,
                    underline, strikeout, kerning, halign, valign)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 

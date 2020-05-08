@@ -77,7 +77,7 @@ class EditorSettings:
 
         return cls(chunkwidth, chunkheight, exporttarget, exportformat)
 
-    def get_elem(self, fd, encoding, compression):
+    def get_elem(self, fd, encoding, compression, compressionlevel):
         """
         Return an XML element for the object.
 
