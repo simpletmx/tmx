@@ -62,7 +62,7 @@ str_prop = tmx.Property("s", "Hello, world!")
 int_prop = tmx.Property("i", 42)
 float_prop = tmx.Property("f", 6.66)
 color_prop = tmx.Property("c", color)
-path_prop = pathlib.PurePath("p", "spam.txt")
+path_prop = tmx.Property("p", pathlib.PurePath("egg", "spam.txt"))
 tileset = tmx.Tileset(0, "egg", 64, 16)
 layer = tmx.Layer("bacon")
 objectgroup = tmx.ObjectGroup("spam")
@@ -84,6 +84,28 @@ tilemap.layers = [layer, objectgroup, grouplayer, imagelayer]
 test(desc, tilemap, None, False)
 test(desc, tilemap, "csv", False)
 
+
+desc = "populated tilesets and layers"
+
+terraintype = tmx.TerrainType("spam", 0)
+tile = tmx.Tile(0)
+
+tileset.terraintypes.append(terraintype)
+tileset.tiles.append(tile)
+
+layertile = tmx.LayerTile(0)
+layerchunk = tmx.LayerChunk(1, 2, 3, 4)
+
+layer.id = 0
+layer.width = 11
+layer.height = 12
+layer.opacity = 0.5
+layer.visible = False
+layer.offsetx = 13
+layer.offsety = 14
+layer.properties.append(str_prop)
+layer.tiles.append(layertile)
+layer.chunks.append(layerchunk)
 
 test(desc, tilemap, None, False)
 test(desc, tilemap, "csv", False)
