@@ -36,11 +36,16 @@ test_n = 0
 def test(desc, tilemap, encoding, compression):
     global test_n
     print(f"Test {test_n}: {desc}")
-    fname = f"{test_fname}_{test_n}A"
+
+    fname = f"{test_fname}_{test_n}A.tmx"
     tilemap.save(fname, encoding, compression)
+    print(f"Write test results: {fname}")
+
     tilemap = tmx.TileMap.load(fname)
-    fname = f"{test_fname}_{test_n}B"
+    fname = f"{test_fname}_{test_n}B.tmx"
     tilemap.save(fname, encoding, compression)
+    print(f"Read test results: {fname}")
+
     test_n += 1
 
 
@@ -48,8 +53,41 @@ desc = "bare-bones tile map"
 tilemap = tmx.TileMap()
 test(desc, tilemap, None, False)
 test(desc, tilemap, "csv", False)
+
+
+desc = "bare tilesets and layers"
+
+color = tmx.Color("#FF0000")
+str_prop = tmx.Property("s", "Hello, world!")
+int_prop = tmx.Property("i", 42)
+float_prop = tmx.Property("f", 6.66)
+color_prop = tmx.Property("c", color)
+path_prop = pathlib.PurePath("p", "spam.txt")
+tileset = tmx.Tileset(0, "egg", 64, 16)
+layer = tmx.Layer("bacon")
+objectgroup = tmx.ObjectGroup("spam")
+grouplayer = tmx.GroupLayer("sausage")
+imagelayer = tmx.ImageLayer("baked beans", 4, 5)
+
+tilemap.tiledversion = "1.2"
+tilemap.width = 10
+tilemap.height = 8
+tilemap.backgroundcolor = color
+tilemap.editorsettings.chunkwidth = 3
+tilemap.editorsettings.chunkheight = 2
+tilemap.editorsettings.exporttarget = "export.png"
+tilemap.editorsettings.exportformat = "png"
+tilemap.properties = [str_prop, int_prop, float_prop, color_prop, path_prop]
+tilemap.tilesets = [tileset]
+tilemap.layers = [layer, objectgroup, grouplayer, imagelayer]
+
+test(desc, tilemap, None, False)
+test(desc, tilemap, "csv", False)
+
+
+test(desc, tilemap, None, False)
+test(desc, tilemap, "csv", False)
 test(desc, tilemap, "base64", False)
 test(desc, tilemap, "base64", True)
 
-desc = ""
-tilemap.tiledversion = "1.2"
+print(f"{test_n} tests completed. Please review the generated files.")
