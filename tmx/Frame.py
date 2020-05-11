@@ -21,13 +21,15 @@ from . import local
 class Frame:
 
     """
+    A single frame of animation for an animated tile.
+
     .. attribute:: tileid
 
        Global ID of the tile for this animation frame.
 
     .. attribute:: duration
 
-       Time length of this frame in milliseconds.
+       Duration of this frame in milliseconds.
     """
 
     def __init__(self, tileid, duration):
@@ -43,7 +45,7 @@ class Frame:
         don't typically need to use it.
         """
         tileid = int(elem.attrib.get("tileid", 0))
-        duration = int(elem.attrib.get("duration", 0))
+        duration = float(elem.attrib.get("duration", 0))
 
         return cls(tileid, duration)
 

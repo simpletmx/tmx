@@ -51,7 +51,6 @@ def test(desc, tilemap, encoding, compression):
 
 desc = "bare-bones tile map"
 tilemap = tmx.TileMap()
-test(desc, tilemap, None, False)
 test(desc, tilemap, "csv", False)
 
 
@@ -82,10 +81,9 @@ tilemap.tilesets = [tileset]
 tilemap.layers = [layer, objectgroup, grouplayer, imagelayer]
 
 test(desc, tilemap, None, False)
-test(desc, tilemap, "csv", False)
 
 
-desc = "populated tilesets and layers"
+desc = "populated tilesets and layers ({})"
 
 terraintype = tmx.TerrainType("spam", 0)
 tile = tmx.Tile(0)
@@ -107,9 +105,38 @@ layer.properties.append(str_prop)
 layer.tiles.append(layertile)
 layer.chunks.append(layerchunk)
 
-test(desc, tilemap, None, False)
+test(desc.format("XML"), tilemap, None, False)
+test(desc.format("csv"), tilemap, "csv", False)
+test(desc.format("base64"), tilemap, "base64", False)
+test(desc.format("zipped"), tilemap, "base64", True)
+
+
+desc = ""
+
+image = tmx.Image(data="xyz")
+frame = tmx.Frame(0, 666)
+
+terraintype.properties.append(int_prop)
+
+tile.type = "waffles"
+tile.terrain = "0,0,0,0,0,0,0,0"
+tile.probability = "0.5"
+tile.properties.append("color_prop")
+tile.image = image
+tile.animation = [frame, frame]
+
+tileset.source = "egg.tsx"
+tileset.spacing = 13
+tileset.margin = 7
+tileset.xoffset = 999
+tileset.yoffset = 9001
+tileset.tilecount = 666
+tileset.columns = 616
+tileset.gridorientation = "orthogonal"
+tileset.gridwidth = 17
+tileset.gridheight = 19
+tileset.image = image
+
 test(desc, tilemap, "csv", False)
-test(desc, tilemap, "base64", False)
-test(desc, tilemap, "base64", True)
 
 print(f"{test_n} tests completed. Please review the generated files.")

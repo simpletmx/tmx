@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import pathlib
 import os
+import pathlib
 import xml.etree.ElementTree as ET
 
 from . import local
@@ -35,39 +35,38 @@ class Tileset:
 
     .. attribute:: name
 
-       The name of this tileset.
+       The name of this tileset. An arbitrary string.
 
     .. attribute:: tilewidth
 
-       The (maximum) width of the tiles in this tileset.
+       The (maximum) width of the tiles in this tileset in pixels.
 
     .. attribute:: tileheight
 
-       The (maximum) height of the tiles in this tileset.
+       The (maximum) height of the tiles in this tileset in pixels.
 
     .. attribute:: source
 
-       The external TSX (Tile Set XML) file to store this tileset in.
-       If set to :const:`None`, this tileset is stored in the TMX file.
+       Path to the external TSX (Tile Set XML) file to store this
+       tileset in.  If set to :const:`None`, this tileset is stored in
+       the TMX file.
 
     .. attribute:: spacing
 
-       The spacing in pixels between the tiles in this tileset (applies
-       to the tileset image).
+       The spacing in pixels between tiles within the tileset image.
 
     .. attribute:: margin
 
-       The margin around the tiles in this tileset (applies to the
-       tileset image).
+       The margin in pixels around the edge of the tileset image.
 
     .. attribute:: xoffset
 
-       The horizontal offset of the tileset in pixels (positive is
-       right).
+       The horizontal offset of the tileset in pixels (right is
+       positive).
 
     .. attribute:: yoffset
 
-       The vertical offset of the tileset in pixels (positive is down).
+       The vertical offset of the tileset in pixels (down is positive).
 
     .. attribute:: tilecount
 
@@ -95,27 +94,28 @@ class Tileset:
 
     .. attribute:: properties
 
-       A list of :class:`Property` objects indicating the tileset's
+       A list of :class:`tmx.Property` objects indicating the tileset's
        properties.
 
     .. attribute:: image
 
-       An :class:`Image` object indicating the tileset's image.  Set to
-       :const:`None` for no image.
+       An :class:`tmx.Image` object indicating the tileset's image.
+
+       Set to :const:`None` for no tileset image.
 
     .. attribute:: terraintypes
 
-       A list of :class:`TerrainType` objects indicating the tileset's
-       terrain types.
+       A list of :class:`tmx.TerrainType` objects indicating the
+       tileset's terrain types.
 
     .. attribute:: tiles
 
-       A list of :class:`Tile` objects indicating the tileset's tile
-       properties.
+       A list of :class:`tmx.Tile` objects indicating the tileset's
+       tiles.
 
     .. attribute:: wangsets
 
-       A list of :class:`Wangset` objects indicating the Wang sets
+       A list of :class:`tmx.Wangset` objects indicating the Wang sets
        defined for the tileset.
     """
 
@@ -182,7 +182,6 @@ class Tileset:
         terraintypes = []
         tiles = []
         wangsets = []
-        
 
         for child in root:
             if child.tag == "grid":
