@@ -23,11 +23,9 @@ attributes of the returned :class:`tmx.TileMap` object, modify the
 attributes to your liking, and save your changes with
 :meth:`tmx.TileMap.save`.  That's it!  Simple, isn't it?
 
-At the request of the developer of Tiled, this documentation does not
-explain in detail what each attribute means. For that, please see the
-TMX format specification, found here:
+Based on the TMX format specification found here:
 
-http://doc.mapeditor.org/en/latest/reference/tmx-map-format/
+https://doc.mapeditor.org/en/stable/reference/tmx-map-format/
 """
 
 

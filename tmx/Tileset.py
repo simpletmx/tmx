@@ -28,6 +28,9 @@ from .Wangset import Wangset
 class Tileset:
 
     """
+    A tileset.  Tilesets define what each global tile ID looks like, as
+    well as various properties for them.
+
     .. attribute:: firstgid
 
        The first global tile ID of this tileset (this global ID maps to
@@ -61,17 +64,20 @@ class Tileset:
 
     .. attribute:: xoffset
 
-       The horizontal offset of the tileset in pixels (right is
-       positive).
+       The horizontal offset of tile positions within the tileset in
+       pixels (right is positive).
 
     .. attribute:: yoffset
 
-       The vertical offset of the tileset in pixels (down is positive).
+       The vertical offset of tile positions within the tileset in
+       pixels (down is positive).
 
     .. attribute:: tilecount
 
        The number of tiles in this tileset.  Set to :const:`None` to not
-       specify this.
+       specify this; if you do so, the tileset is image-based and
+       consists of only the tiles defined explicitly under
+       :attr:`tiles`.
 
     .. attribute:: columns
 
@@ -82,15 +88,21 @@ class Tileset:
 
        Orientation of the grid for the tiles in this tileset
        (``"orthogonal"`` or ``"isometric"``).  Set to :const:`None` to
-       not specify this.
+       not specify this.  Used by Tiled only for isometric map
+       orientation to determine how terrain and collision information is
+       rendered.
 
     .. attribute:: gridwidth
 
        Width of a grid cell.  Set to :const:`None` to not specify this.
+       Used by Tiled only for isometric map orientation to determine how
+       terrain and collision information is rendered.
 
     .. attribute:: gridheight
 
        Height of a grid cell.  Set to :const:`None` to not specify this.
+       Used by Tiled only for isometric map orientation to determine how
+       terrain and collision information is rendered.
 
     .. attribute:: properties
 
@@ -100,8 +112,15 @@ class Tileset:
     .. attribute:: image
 
        An :class:`tmx.Image` object indicating the tileset's image.
+       Each tile in the tileset uses a portion of the image based on the
+       tile's local ID or index (a value from 0 to :attr:`tilecount`)
+       and this tileset's various attributes (explained above).  Tiles
+       are positioned in the tileset image starting in the top-left and
+       then going from left to right, top to bottom.
 
-       Set to :const:`None` for no tileset image.
+       Set to :const:`None` for no tileset image, which means that the
+       tileset is image-based and each tile has its own image defined
+       explicitly under :attr:`tiles`.
 
     .. attribute:: terraintypes
 
@@ -110,8 +129,10 @@ class Tileset:
 
     .. attribute:: tiles
 
-       A list of :class:`tmx.Tile` objects indicating the tileset's
-       tiles.
+       A list of :class:`tmx.Tile` objects indicating properties of the
+       tileset's tiles.  If this tileset is an image-based tileset, all
+       tiles will be listed here; if not, only tiles with custom
+       settings will be listed.
 
     .. attribute:: wangsets
 
